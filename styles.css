@@ -1,0 +1,196 @@
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px; /* Accounts for fixed header height */
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Montserrat', sans-serif;
+    background-color: #fdf5e6;
+}
+
+/* FIXED NAVIGATION HEADER */
+/* Move nav lower on the page and center it */
+.hero-nav {
+    position: static; /* remove fixed header */
+    margin: 3rem auto 4rem auto; /* spacing above and below */
+    text-align: center;
+    width: fit-content;
+    background: transparent; /* no bar */
+    border-radius: 8px;
+    padding: 0;
+}
+
+/* Nav list styling */
+.hero-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+}
+
+/* Nav links styling */
+.hero-nav ul li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 600;
+    font-size: 1.2rem;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+/* Background highlight when active/selected */
+.hero-nav ul li a.active,
+.hero-nav ul li a:hover {
+    background-color: #f0e4cc; /* a subtle creme highlight */
+}  
+
+/* Enhanced smooth scrolling with CSS */
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 80px;
+    }
+}
+
+/* HERO SECTION (About) */
+.hero {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 0 10%;
+    box-sizing: border-box;
+    margin-top: 0; /* Account for fixed header */
+}
+
+/* Left column */
+.left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.left h1 {
+    font-size: 7vw;
+    margin: 0;
+    line-height: 1.2;
+    opacity: 0;
+    color: #333;
+}
+
+.left .big-name {
+    font-size: 9vw;
+    color: #444;
+}
+
+/* Right column */
+.right {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5%;
+}
+
+.right p {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    max-width: 400px;
+    color: #555;
+}
+
+/* Content Sections */
+.content-section {
+    min-height: 100vh;
+    padding: 8rem 10% 5rem 10%; /* Extra top padding for fixed header */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.content-section h2 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: #333;
+}
+
+.content-section p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 1rem;
+}
+
+.content-section ul {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #555;
+}
+
+.content-section ul li {
+    margin-bottom: 0.5rem;
+}
+
+/* Fade-in animations */
+.fade-in {
+    animation: fadeIn 1s forwards;
+}
+
+.delay-1 {
+    animation-delay: 0s;
+}
+
+.delay-2 {
+    animation-delay: 1s;
+}
+
+.delay-3 {
+    animation-delay: 2.5s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 0 5%;
+    }
+
+    .left h1 {
+        font-size: 12vw;
+    }
+
+    .left .big-name {
+        font-size: 15vw;
+    }
+
+    .hero-nav ul {
+        gap: 1.5rem;
+    }
+
+    .hero-nav ul li a {
+        font-size: 1rem;
+    }
+
+    .content-section {
+        padding: 6rem 5% 3rem 5%;
+    }
+}

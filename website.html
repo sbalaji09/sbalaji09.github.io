@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siddharth's Website</title>
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <!-- FIXED NAVIGATION HEADER -->
+    <nav class="hero-nav">
+        <ul>
+            <li><a href="#about" onclick="smoothScrollTo('about')">About</a></li>
+            <li><a href="#projects" onclick="smoothScrollTo('projects')">Projects</a></li>
+            <li><a href="#contact" onclick="smoothScrollTo('contact')">Contact</a></li>
+        </ul>
+    </nav>
+
+    <script>
+        // Enhanced smooth scrolling with JavaScript for better control
+        function smoothScrollTo(elementId) {
+            event.preventDefault();
+            const element = document.getElementById(elementId);
+            const headerHeight = 80; // Height of fixed header
+            const elementPosition = element.offsetTop - headerHeight;
+            
+            window.scrollTo({
+                top: elementPosition,
+                behavior: 'smooth'
+            });
+            
+            // Update URL hash without jumping
+            history.pushState(null, null, '#' + elementId);
+        }
+
+        // Also handle direct hash links in URL
+        window.addEventListener('load', function() {
+            if (window.location.hash) {
+                const elementId = window.location.hash.substring(1);
+                setTimeout(() => smoothScrollTo(elementId), 100);
+            }
+        });
+    </script>
+
+    <!-- HERO / ABOUT SECTION -->
+    <section id="about" class="hero">
+        <div class="left">
+            <h1 class="fade-in delay-1">Hi</h1>
+            <h1 class="fade-in delay-2">my name is</h1>
+            <h1 class="fade-in delay-3 big-name">Siddharth</h1>
+        </div>
+        <div class="right">
+            <p>
+                I'm Siddharth. I have a passion for technology, design, and problem solving. 
+                I enjoy building creative projects, learning new skills, and collaborating with 
+                others to bring ideas to life.
+            </p>
+        </div>
+    </section>
+
+    <!-- PROJECTS SECTION -->
+    <section id="projects" class="content-section">
+        <h2>Projects</h2>
+        <p>Here are some of the projects I've worked on:</p>
+        <ul>
+            <li>💻 Portfolio Website - A responsive personal website showcasing my work</li>
+            <li>📱 Mobile App UI Design - Modern interface designs for mobile applications</li>
+            <li>⚙️ Automation Script - Python scripts for workflow optimization</li>
+        </ul>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section id="contact" class="content-section">
+        <h2>Contact</h2>
+        <p>If you'd like to collaborate, feel free to reach out at:</p>
+        <p><strong>Email:</strong> siddharth@example.com</p>
+        <p>I'm always excited to discuss new opportunities and creative projects!</p>
+    </section>
+</body>
+</html>
