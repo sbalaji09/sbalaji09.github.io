@@ -130,3 +130,39 @@ window.addEventListener('scroll', () => {
       indicator.style.opacity = opacity;
   }
 });
+
+// Hero section animation control
+window.addEventListener('load', () => {
+  const siddharthElement = document.getElementById('siddharth-name');
+  const hiElement = document.querySelector('.delay-1'); // "Hi" element
+  const nameElement = document.querySelector('.delay-2'); // "my name is" element
+  const paragraphElement = document.querySelector('.right p'); // paragraph element
+  
+  if (siddharthElement && hiElement && nameElement && paragraphElement) {
+    // Start with "Hi" animation
+    hiElement.classList.remove('hero-section-hidden');
+    
+    // After "Hi" completes, start "my name is"
+    hiElement.addEventListener('animationend', (event) => {
+      if (event.animationName === 'fadeInUp') {
+        nameElement.classList.remove('hero-section-hidden');
+      }
+    });
+    
+    // After "my name is" completes, start "Siddharth" and paragraph with enhanced animations
+    nameElement.addEventListener('animationend', (event) => {
+      if (event.animationName === 'fadeInUp') {
+        // Enhanced Siddharth name animation
+        siddharthElement.classList.remove('hero-section-hidden');
+        siddharthElement.classList.remove('fade-in');
+        siddharthElement.classList.add('name-glow');
+        
+        // Enhanced paragraph animation with slight delay for better effect
+        setTimeout(() => {
+          paragraphElement.classList.remove('hero-section-hidden');
+          paragraphElement.classList.add('paragraph-reveal');
+        }, 200);
+      }
+    });
+  }
+});

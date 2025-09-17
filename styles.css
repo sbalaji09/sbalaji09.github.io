@@ -222,6 +222,11 @@ body {
 }
 
 /* ANIMATIONS */
+.hero-section-hidden {
+    opacity: 0 !important;
+    transform: translateY(30px);
+}
+
 .fade-in {
     animation: fadeInUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
@@ -229,6 +234,69 @@ body {
 .delay-1 { animation-delay: 0.2s; }
 .delay-2 { animation-delay: 0.6s; }
 .delay-3 { animation-delay: 1s; }
+
+.hero-section-visible {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced name animation */
+.name-glow {
+    animation: nameGlow 1.5s ease-out forwards;
+}
+
+@keyframes nameGlow {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.8);
+        filter: blur(2px);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translateY(-5px) scale(1.05);
+        filter: blur(0px);
+        text-shadow: 0 0 20px rgba(51, 51, 51, 0.3);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0px);
+        text-shadow: 0 0 30px rgba(51, 51, 51, 0.2);
+    }
+}
+
+/* Enhanced paragraph animation with word-by-word effect */
+.paragraph-reveal {
+    animation: paragraphReveal 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes paragraphReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+        filter: blur(1px);
+    }
+    30% {
+        opacity: 0.3;
+        transform: translateY(10px) scale(0.98);
+        filter: blur(0px);
+    }
+    70% {
+        opacity: 0.9;
+        transform: translateY(-3px) scale(1.01);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes underlineExpand {
+    to {
+        width: 100%;
+    }
+}
 
 @keyframes fadeInUp {
     from {
