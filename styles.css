@@ -204,6 +204,32 @@ body {
     font-size: 0.95rem;
 }
 
+/* RESUME SECTION */
+.resume-section {
+    text-align: center;
+}
+
+.resume-button {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding: 1rem 2.5rem;
+    background: var(--accent-color);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-light);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: var(--transition);
+}
+
+.resume-button:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
 /* CONTACT SECTION */
 .contact-content {
     text-align: center;
