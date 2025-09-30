@@ -70,14 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Parallax effect for hero section
-    window.addEventListener('scroll', function() {
-        const scrolled = window.pageYOffset;
-        const hero = document.querySelector('.hero');
-        if (hero) {
-            hero.style.transform = `translateY(${scrolled * 0.1}px)`;
-        }
-    });
+    // Parallax effect removed as requested
     
     // Intersection Observer for fade-in animations
     const observerOptions = {

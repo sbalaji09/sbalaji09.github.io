@@ -115,7 +115,7 @@ body::before {
 
 /* ABOUT SECTION */
 .hero {
-    padding: 80px 40px;
+    padding: 60px 40px;
     max-width: 700px;
     margin: 0 auto;
     animation: fadeInUp 1s ease-out;
@@ -140,7 +140,7 @@ body::before {
 
 /* CONTENT SECTIONS */
 .content-section {
-    padding: 80px 40px;
+    padding: 50px 40px;
     max-width: 1000px;
     margin: 0 auto;
     animation: fadeIn 1.2s ease-out;
@@ -148,7 +148,7 @@ body::before {
 
 .content-section h2 {
     font-size: 32px;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
     font-weight: 700;
     color: var(--primary-color);
     position: relative;
@@ -250,6 +250,41 @@ body::before {
     transform: scale(1.05);
 }
 
+/* GitHub button for projects */
+.project-github-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 8px 16px;
+    background: var(--primary-color);
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: var(--transition);
+    position: relative;
+    z-index: 1;
+    border: 1px solid transparent;
+}
+
+.project-github-btn::before {
+    content: '⚡';
+    font-size: 16px;
+}
+
+.project-github-btn:hover {
+    background: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 122, 204, 0.3);
+    border-color: var(--accent-color);
+}
+
+.project-github-btn:active {
+    transform: translateY(0);
+}
+
 /* Remove duplicate resume button styles */
 
 /* CONTACT SECTION */
@@ -345,7 +380,7 @@ body::before {
 /* RESPONSIVE DESIGN */
 @media (max-width: 768px) {
     .hero {
-        padding: 60px 20px;
+        padding: 40px 20px;
     }
 
     .hero .content h1 {
@@ -357,7 +392,7 @@ body::before {
     }
 
     .content-section {
-        padding: 60px 20px;
+        padding: 40px 20px;
     }
 
     .content-section h2 {
