@@ -10,99 +10,57 @@
     <script src="script.js"></script>
 </head>
 <body>
-    <!-- FIXED NAVIGATION HEADER -->
+    <!-- RESUME BUTTON -->
+    <a href="Resume.pdf" target="_blank" class="resume-button">Resume</a>
+
+    <!-- NAVIGATION -->
     <nav class="hero-nav">
         <ul>
-            <li><a href="#resume" onclick="smoothScrollTo('resume')">Resume</a></li>
-            <li><a href="#about" onclick="smoothScrollTo('about')">About</a></li>
-            <li><a href="#projects" onclick="smoothScrollTo('projects')">Projects</a></li>
-            <li><a href="#contact" onclick="smoothScrollTo('contact')">Contact</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#contact">Contact</a></li>
         </ul>
     </nav>
 
-    <script>
-        // Enhanced smooth scrolling with JavaScript for better control
-        function smoothScrollTo(elementId) {
-            event.preventDefault();
-            const element = document.getElementById(elementId);
-            const headerHeight = 80; // Height of fixed header
-            const elementPosition = element.offsetTop - headerHeight;
-            
-            window.scrollTo({
-                top: elementPosition,
-                behavior: 'smooth'
-            });
-            
-            // Update URL hash without jumping
-            history.pushState(null, null, '#' + elementId);
-        }
-
-        // Also handle direct hash links in URL
-        window.addEventListener('load', function() {
-            if (window.location.hash) {
-                const elementId = window.location.hash.substring(1);
-                setTimeout(() => smoothScrollTo(elementId), 100);
-            }
-        });
-    </script>
-
-    <!-- RESUME SECTION -->
-    <section id="resume" class="content-section resume-section">
-        <h2>Resume</h2>
-        <p>Download my resume to learn more about my experience and qualifications</p>
-        <a href="Resume.pdf" target="_blank" class="resume-button">View Resume</a>
-    </section>
-
-    <!-- HERO / ABOUT SECTION -->
+    <!-- ABOUT SECTION -->
     <section id="about" class="hero">
-        <div class="left">
-            <h1 class="hero-section-hidden fade-in delay-1">Hi</h1>
-            <h1 class="hero-section-hidden fade-in delay-2">my name is</h1>
-            <h1 id="siddharth-name" class="hero-section-hidden fade-in delay-3 big-name">Siddharth</h1>
-        </div>
-        <div class="right">
-            <p class="hero-section-hidden paragraph-reveal">
-                <span class="im-highlight">I'm</span> Siddharth, a passionate creator at the intersection of technology and design. 
-                I thrive on solving complex problems, building innovative projects, and 
-                collaborating with others to transform ideas into reality.
+        <div class="content">
+            <h1>Siddharth Balaji</h1>
+            <p>
+                I'm a student who likes building things. Currently working on mobile apps and exploring AI/ML.
+                Always down to work on interesting projects.
             </p>
         </div>
-        <div class="scroll-indicator"></div>
     </section>
 
     <!-- PROJECTS SECTION -->
     <section id="projects" class="content-section">
-        <h2>Featured Projects</h2>
-        <p>Here's a showcase of some exciting projects I've been working on</p>
-        
+        <h2>Projects</h2>
+
         <div class="projects-grid">
             <div class="project-card">
-                <span class="icon">📱</span>
                 <h3>GreenThumb</h3>
-                <p>A mobile-app built using React Native and Expo Go that helps users take care of their plants through a fun and interactive user experience</p>
+                <p>Mobile app built with React Native and Expo Go that helps users take care of their plants through a fun and interactive user experience</p>
             </div>
-            
+
             <div class="project-card">
-                <span class="icon">📄</span>
                 <h3>Research Paper</h3>
-                <p>Wrote a research paper under guidance of a Stanford PHD student that compares the use of two image classifiers, AlexNet and CNN, with federated learning to determine the efficacy</p>
+                <p>Wrote a research paper under guidance of a Stanford PhD student comparing AlexNet and CNN image classifiers with federated learning</p>
             </div>
-            
+
             <div class="project-card">
-                <span class="icon">💻</span>
                 <h3>LaunchLab</h3>
-                <p>JavaScript-based app that uses prompt engineering to determine ideal startup ideas for a user based on their preferences in apps</p>
+                <p>JavaScript app that uses prompt engineering to generate startup ideas based on user preferences</p>
             </div>
         </div>
     </section>
 
     <!-- CONTACT SECTION -->
     <section id="contact" class="content-section">
-        <h2>Let's Connect</h2>
+        <h2>Contact</h2>
         <div class="contact-content">
-            <p>Ready to collaborate on something amazing? I'd love to hear from you!</p>
             <p><strong>Email:</strong> siddharthbalaji6@gmail.com</p>
-            <p>Whether you have a project idea, want to discuss opportunities, or just want to chat about technology and design, don't hesitate to reach out.</p>
+            <p>Feel free to reach out if you want to work on something or just chat.</p>
         </div>
     </section>
 </body>
