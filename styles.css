@@ -204,30 +204,29 @@ body {
     font-size: 0.95rem;
 }
 
-/* RESUME SECTION */
-.resume-section {
-    text-align: center;
-}
-
-.resume-button {
-    display: inline-block;
-    margin-top: 1.5rem;
-    padding: 1rem 2.5rem;
-    background: var(--accent-color);
+/* RESUME BUTTON (TOP RIGHT CORNER) */
+.resume-button-corner {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    padding: 0.6rem 1.2rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
     color: var(--text-primary);
     text-decoration: none;
-    font-weight: 600;
-    font-size: 1.1rem;
-    border-radius: var(--border-radius);
+    font-weight: 500;
+    font-size: 0.9rem;
+    border-radius: 8px;
     box-shadow: var(--shadow-light);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     transition: var(--transition);
+    z-index: 101;
 }
 
-.resume-button:hover {
-    background: var(--accent-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+.resume-button-corner:hover {
+    background: var(--accent-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* CONTACT SECTION */
