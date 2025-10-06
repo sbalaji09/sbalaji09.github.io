@@ -292,6 +292,7 @@ body::before {
 .project-tag:hover {
     background: rgba(0, 122, 204, 0.2);
     transform: scale(1.05);
+    cursor: default;
 }
 
 /* GitHub button for projects */
