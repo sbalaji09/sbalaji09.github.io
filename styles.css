@@ -211,48 +211,33 @@ body::before {
 }
 
 .project-card::before {
-/* Contact Links Styling */
-.contact-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin-top: 30px;
+    .contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
 }
 
 .contact-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 14px 32px;
-    color: white !important; /* Force white text */
-    text-decoration: none !important; /* Remove any underlines */
-    border-radius: 50px; /* Oval shape */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-weight: 600;
-    font-size: 16px;
-    min-width: 180px;
-    text-align: center;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.contact-link:active,
-.contact-link:visited,
-.contact-link:focus {
-    color: white !important;
-    text-decoration: none !important;
+    color: inherit;
 }
 
 .contact-link i {
-    font-size: 22px;
+    font-size: 18px;
     transition: transform 0.3s ease;
 }
 
 .contact-link:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .contact-link:hover i {
@@ -262,37 +247,31 @@ body::before {
 /* Email button */
 .contact-link[href*="mailto:"] {
     background-color: #D44638; /* Gmail red */
-    border: 2px solid #D44638;
 }
 
 .contact-link[href*="mailto:"]:hover {
     background-color: #c23d30;
-    border-color: #c23d30;
-    box-shadow: 0 8px 20px rgba(212, 70, 56, 0.3);
+    box-shadow: 0 6px 16px rgba(212, 70, 56, 0.3);
 }
 
 /* LinkedIn button */
 .contact-link[href*="linkedin"] {
     background-color: #0A66C2; /* LinkedIn blue */
-    border: 2px solid #0A66C2;
 }
 
 .contact-link[href*="linkedin"]:hover {
     background-color: #0958a7;
-    border-color: #0958a7;
-    box-shadow: 0 8px 20px rgba(10, 102, 194, 0.3);
+    box-shadow: 0 6px 16px rgba(10, 102, 194, 0.3);
 }
 
 /* GitHub button */
 .contact-link[href*="github"] {
     background-color: #333; /* GitHub black */
-    border: 2px solid #333;
 }
 
 .contact-link[href*="github"]:hover {
     background-color: #222;
-    border-color: #222;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* Project tags for better organization */
