@@ -56,7 +56,7 @@ a {
     z-index: 1;
     width: min(calc(100% - 40px), var(--max-width));
     margin: 0 auto;
-    padding: 24px 0 56px;
+    padding: max(24px, env(safe-area-inset-top)) 0 56px;
 }
 
 .site-header {
@@ -78,8 +78,11 @@ a {
 
 .site-mark {
     text-decoration: none;
-    font-size: 13px;
-    letter-spacing: 0.18em;
+    font-size: 1.5rem;
+    font-family: "Newsreader", serif;
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    /* letter-spacing: 0.18em; */
     text-transform: uppercase;
 }
 
@@ -111,6 +114,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 76px;
+    padding-top: 6px;
 }
 
 section[id] {
@@ -126,7 +130,7 @@ section[id] {
 }
 
 .hero-panel {
-    min-height: calc(100svh - 150px);
+    min-height: max(560px, calc(100svh - 170px));
     display: flex;
     flex-direction: column;
     justify-content: center;
