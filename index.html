@@ -4,176 +4,159 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siddharth's Website</title>
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
-    <!-- RESUME BUTTON -->
-    <a href="Resume.pdf" target="_blank" class="resume-button">Resume</a>
+    <div class="page-shell">
+        <header class="site-header">
+            <a href="#intro" class="site-mark">SB</a>
+            <nav class="site-nav">
+                <a href="#experience">Experience</a>
+                <a href="#projects">Projects</a>
+                <a href="#contact">Contact</a>
+                <a href="Resume.pdf" target="_blank" class="resume-link">Resume</a>
+            </nav>
+        </header>
 
-    <!-- NAVIGATION -->
-    <nav class="hero-nav">
-        <ul>
-            <li><a href="#about">About</a></li>
-            <li><a href="#experience">Experience</a></li>
-            <li><a href="#projects">Projects</a></li>
-            <li><a href="#contact">Contact</a></li>
-        </ul>
-    </nav>
+        <main>
+            <section id="intro" class="hero-panel reveal">
+                <p class="eyebrow">Software engineer, builder, and CS student.</p>
+                <h1>Siddharth Balaji</h1>
+                <p class="hero-copy">
+                    I build across distributed systems, developer tools, and AI/ML.
+                    Incoming Software Engineer Intern at Dell Technologies. Always interested in ambitious product and infrastructure work.
+                </p>
+                <a href="#experience" class="scroll-link">Scroll to see selected work</a>
+            </section>
 
-    <!-- ABOUT SECTION -->
-    <section id="about" class="hero">
-        <div class="content">
-            <h1>Siddharth Balaji</h1>
-            <p>
-                I'm a student who likes building things. Currently working on distributed systems and exploring AI/ML.
-                Always down to work on interesting projects.
-            </p>
-        </div>
-    </section>
-
-    <!-- EXPERIENCE SECTION -->
-    <section id="experience" class="content-section">
-        <h2>Experience</h2>
-
-        <div class="experience-grid">
-            <!-- Work Experience
-            <div class="experience-card">
-                <div class="experience-header">
-                    <h3>Your Role Title</h3>
-                    <span class="experience-date">Month Year - Present</span>
+            <section id="experience" class="section-block reveal">
+                <div class="section-heading">
+                    <p class="eyebrow">Experience</p>
+                    <h2>Work that shaped how I build.</h2>
                 </div>
-                <p class="experience-company">Company Name</p>
-                <p>Description of what you did and accomplished.</p>
-            </div> -->
 
-            <!-- Clubs -->
-            <div class="experience-card">
-                <div class="experience-header">
-                    <h3>Software Engineer</h3>
-                    <span class="experience-date">November 2025 - Present</span>
+                <div class="experience-row">
+                    <article class="experience-column reveal">
+                        <p class="experience-meta">June 2026 - August 2026</p>
+                        <h3>Incoming Software Engineer Intern</h3>
+                        <p class="experience-place">Dell Technologies · Round Rock, TX</p>
+                        <p>
+                            Joining Dell this summer to work on production engineering problems at scale.
+                        </p>
+                    </article>
+
+                    <article class="experience-column reveal">
+                        <p class="experience-meta">November 2025 - Present</p>
+                        <h3>Software Engineer</h3>
+                        <p class="experience-place">Hack4Impact Cal Poly</p>
+                        <p>
+                            Built a landing page and volunteer sign-up system for Much Hope, enabling outreach volunteers to register directly through the site. Shipped REST APIs and responsive UI components in React, TypeScript, and Node.js.
+                        </p>
+                    </article>
+
+                    <article class="experience-column reveal">
+                        <p class="experience-meta">October 2025 - Present</p>
+                        <h3>Tech Lead</h3>
+                        <p class="experience-place">Codebox Cal Poly</p>
+                        <p>
+                            Lead a 7+ engineer team building a React Native campus navigation app, defining technical standards across frontend and backend systems and designing the core data model for amenity discovery.
+                        </p>
+                    </article>
                 </div>
-                <p class="experience-company">Hack4Impact</p>
-                <p>Developing full-stack web features for nonprofit clients in a team of 6+ engineers</p>
-            </div>
+            </section>
 
-            <div class="experience-card">
-                <div class="experience-header">
-                    <h3>Tech Lead</h3>
-                    <span class="experience-date">October 2025 - Present</span>
+            <section id="projects" class="section-block reveal">
+                <div class="section-heading">
+                    <p class="eyebrow">Projects</p>
+                    <h2>Things I built because the existing tools were not enough.</h2>
                 </div>
-                <p class="experience-company">Codebox</p>
-                <p>Leading the design, development, and deployment of MustangMaps, a React Native mobile app for navigation around the Cal Poly SLO campus</p>
-            </div>
-        </div>
-    </section>
 
-    <!-- PROJECTS SECTION -->
-    <section id="projects" class="content-section">
-        <h2>Projects</h2>
+                <div class="projects-stack">
+                    <article class="project-card reveal">
+                        <div class="project-topline">
+                            <h3>Fere</h3>
+                            <span>Developer tool</span>
+                        </div>
+                        <p class="project-summary">
+                            A macOS app for understanding local development environments in real time.
+                        </p>
+                        <ul class="project-bullets">
+                            <li>Auto-discovers services and renders live topology graphs.</li>
+                            <li>Traces request flow by intercepting traffic between services.</li>
+                            <li>Includes API testing, Docker log streaming, and database exploration.</li>
+                        </ul>
+                        <a href="https://getfere.com" target="_blank" class="project-link-btn">Open Website</a>
+                    </article>
 
-        <div class="projects-grid">
-            <div class="project-card">
-                <h3>Search Engine</h3>
-                <p>A full-text search engine built from scratch in Rust, combining BM25 ranking with HNSW vector search to achieve 0.89 MRR on benchmark evaluations</p>
-                <div class="project-tags">
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        Rust
-                    </span>  
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        Vector Search
-                    </span>          
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        Full-Text Search
-                    </span>                                  
+                    <article class="project-card reveal">
+                        <div class="project-topline">
+                            <h3>Search Engine</h3>
+                            <span>Systems project</span>
+                        </div>
+                        <p class="project-summary">
+                            A search engine in Rust with both lexical retrieval and vector search.
+                        </p>
+                        <ul class="project-bullets">
+                            <li>Built full-text indexing, tokenization, and concurrent query execution from scratch.</li>
+                            <li>Combined BM25 with HNSW vector retrieval to reach 0.89 MRR on benchmarks.</li>
+                            <li>Used Rust’s type system to keep indexing memory-safe under concurrency.</li>
+                        </ul>
+                        <a href="https://github.com/sbalaji09/SearchEngine" target="_blank" class="project-link-btn">Open GitHub Repo</a>
+                    </article>
+
+                    <article class="project-card reveal">
+                        <div class="project-topline">
+                            <h3>ResearchQ</h3>
+                            <span>AI / ML</span>
+                        </div>
+                        <p class="project-summary">
+                            A research assistant that synthesizes findings across academic papers.
+                        </p>
+                        <ul class="project-bullets">
+                            <li>Queries and synthesizes across 20+ papers using retrieval-augmented generation.</li>
+                            <li>Generates structured literature reviews with clustering of related findings.</li>
+                            <li>Keeps every synthesized claim source-linked back to the original paper.</li>
+                        </ul>
+                        <a href="https://github.com/sbalaji09/LogBuilder" target="_blank" class="project-link-btn">Open GitHub Repo</a>
+                    </article>
+
+                    <article class="project-card reveal">
+                        <div class="project-topline">
+                            <h3>Federated Learning Research</h3>
+                            <span>Research</span>
+                        </div>
+                        <p class="project-summary">
+                            Federated learning research done under Stanford PhD mentorship.
+                        </p>
+                        <ul class="project-bullets">
+                            <li>Co-authored work on CNN architectures in federated learning environments.</li>
+                            <li>Reached 93% accuracy with AlexNet while preserving distributed data privacy.</li>
+                            <li>Benchmarked architecture tradeoffs under simulated client heterogeneity.</li>
+                        </ul>
+                    </article>
                 </div>
-                <a href="https://github.com/sbalaji09/SearchEngine" target="_blank" class="project-github-btn">View on GitHub</a>
-            </div>
+            </section>
 
-            <div class="project-card">
-                <h3>Orbis</h3>
-                <p>A tracing platform that helps developers debug AI agent workflows by visualizing tool calls, decision paths, and prompt chains in real-time</p>
-                <div class="project-tags" style="display:flex; flex-wrap:wrap; gap:12px;">
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        Agent Observability
-                    </span>
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        Distributed Systems
-                    </span>
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        SDK
-                    </span>
+            <section id="contact" class="section-block section-block-last reveal">
+                <div class="section-heading">
+                    <p class="eyebrow">Contact</p>
+                    <h2>If you are building something sharp, I’m interested.</h2>
                 </div>
-            </div>
 
-            <div class="project-card">
-                <h3>ResearchQ</h3>
-                <p>A RAG application that lets researchers semantically query and synthesize findings across 20+ papers, with automated literature review generation and ML-powered clustering</p>
-                <div class="project-tags">
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        RAG
-                    </span>
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        AI / ML
-                    </span>
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        Semantic Search
-                    </span>
+                <div class="contact-panel reveal">
+                    <p class="contact-line">siddharthbalaji6@gmail.com</p>
+                    <div class="contact-links">
+                        <a href="mailto:siddharthbalaji6@gmail.com">Email</a>
+                        <a href="https://www.linkedin.com/in/siddharth-balaji-9b47712a5/" target="_blank">LinkedIn</a>
+                        <a href="https://github.com/sbalaji09" target="_blank">GitHub</a>
+                    </div>
                 </div>
-                <a href="https://github.com/sbalaji09/LogBuilder" target="_blank" class="project-github-btn">View on GitHub</a>
-            </div>
-
-            <div class="project-card">
-                <h3>Patent Prior Art Discovery System</h3>
-                <p>Automated platform that uses semantic search and scalable storage to reduce patent analysis time for patent lawyers</p>
-                <div class="project-tags" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        Python
-                    </span>
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        MCP
-                    </span>
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        Semantic Search
-                    </span>
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        React
-                    </span>
-                    <span class="project-tag" style="font-weight:bold; border:1px solid black; border-radius:999px; padding:4px 16px; display:inline-block;">
-                        Pinecone
-                    </span>
-                </div>
-                <a href="https://github.com/sbalaji09/PatentDiscoverySystem" target="_blank" class="project-github-btn">View on GitHub</a>
-            </div>            
-            
-        </div>
-    </section>
-
-    <!-- CONTACT SECTION -->
-    <section id="contact" class="content-section">
-        <h2>Contact</h2>
-        <div class="contact-content">
-            <p><strong>Email:</strong> siddharthbalaji6@gmail.com</p>
-            <p>Feel free to reach out if you want to work on something or just chat.</p>
-            <div class="contact-links">
-                <a href="mailto:siddharthbalaji6@gmail.com" class="contact-link">
-                    <i class="fas fa-envelope"></i>
-                    <span>Email</span>
-                </a>
-                <a href="https://www.linkedin.com/in/siddharth-balaji-9b47712a5/" class="contact-link">
-                    <i class="fab fa-linkedin"></i>
-                    <span>LinkedIn</span>
-                </a>
-                <a href="https://github.com/sbalaji09" class="contact-link">
-                    <i class="fab fa-github"></i>
-                    <span>GitHub</span>
-                </a>
-            </div>
-        </div>
-    </section>
+            </section>
+        </main>
+    </div>
 </body>
 </html>
