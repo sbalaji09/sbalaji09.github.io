@@ -4,169 +4,210 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siddharth Balaji</title>
-    <meta name="description" content="Siddharth Balaji — I build systems for LLM inference and the developer tools around them.">
+    <meta name="description" content="Siddharth Balaji — I take apart inference servers to find out why they're slow, then make them less slow.">
+
+    <!--
+      hey, you opened the source. respect.
+      this whole thing is hand-written html/css/js. no framework, no build step,
+      no 400kb of javascript to render three paragraphs. if you find a bug, that's
+      a feature called "personality." (it's probably a real bug though, email me.)
+    -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
 </head>
-<body>
+<body class="is-loading">
+    <div class="cursor" aria-hidden="true"></div>
+
     <div class="page-shell">
-        <header class="site-header">
-            <a href="#intro" class="site-mark">SB</a>
-            <nav class="site-nav">
-                <a href="#experience">Experience</a>
-                <a href="#projects">Projects</a>
-                <a href="#contact">Contact</a>
-                <a href="/Resume.pdf" target="_blank" class="resume-link">Resume</a>
+        <header class="nav">
+            <a href="#top" class="nav-name">Siddharth Balaji</a>
+            <nav class="nav-links">
+                <a href="#about">about</a>
+                <a href="#work">work</a>
+                <a href="#now">now</a>
+                <a href="#contact">say hi</a>
+                <a href="/Resume.pdf" target="_blank" class="nav-resume">résumé</a>
             </nav>
         </header>
 
-        <main>
-            <section id="intro" class="hero">
-                <h1>I build systems for LLM inference and the developer tools around them.</h1>
-                <p class="hero-sub">
-                    Co-founder of Fere, a macOS developer tool (2nd place and $10K at Cal Poly
-                    Innovation Quest). Software engineer intern at Dell Technologies working on AI
-                    server and networking infrastructure. CS at Cal Poly.
+        <main id="top">
+            <!-- ░░ hero ░░ -->
+            <section class="hero">
+                <p class="greeting" data-greeting>Hey there —</p>
+                <h1 class="hero-name" data-secret>I'm Siddharth.</h1>
+                <p class="hero-intro stagger">
+                    I take apart LLM inference servers to find out why they're slow, then
+                    make them less slow. <span class="soft">It's more fun than it sounds.</span>
                 </p>
+                <p class="hero-sub stagger">
+                    Days I'm at Dell, working on AI server and networking infrastructure.
+                    Nights and weekends I'm building Fere, a tool I wished existed so badly
+                    I just made it.
+                </p>
+                <span class="scribble scribble-hero">↑ yes, I hand-coded this. weird flex, I know.</span>
             </section>
 
-            <section id="experience" class="section reveal">
-                <p class="section-label">Experience</p>
-                <div class="entries">
-                    <article class="entry reveal">
-                        <div class="entry-head">
-                            <h3>Dell Technologies <span class="entry-role">— Software Engineer Intern</span></h3>
-                            <p class="entry-meta">June 2026 – Present · Round Rock, TX</p>
-                        </div>
-                        <p class="entry-body">
-                            Building a CI/CD pipeline and full-stack app to run rack- and cluster-level
-                            (L11/L12) diagnostics against virtual server IPs, so the tests don't need physical
-                            hardware. Built a Redis and Celery queue that processes IP-lease requests in the
-                            background, off the main request path.
-                        </p>
-                    </article>
-
-                    <article class="entry reveal">
-                        <div class="entry-head">
-                            <h3>Codebox <span class="entry-role">— Tech Lead</span></h3>
-                            <p class="entry-meta">Oct 2025 – Present · Cal Poly</p>
-                        </div>
-                        <p class="entry-body">
-                            Lead an 8-engineer team building MustangMaps, a React Native campus navigation app
-                            used by 150+ Cal Poly students. Designed the GeoJSON schema and the indexing behind
-                            the nearest-amenity lookups.
-                        </p>
-                    </article>
+            <!-- ░░ about ░░ -->
+            <section id="about" class="block reveal">
+                <p class="label">// the short version</p>
+                <div class="prose">
+                    <p>
+                        I got into systems work the unglamorous way. I had a model that was too
+                        slow, no budget for more GPUs, and too much stubbornness to accept either.
+                        So I started pulling inference servers apart to see where the time actually
+                        goes.
+                    </p>
+                    <p>
+                        It's almost never where you'd guess. I spent the better part of a week
+                        convinced my scheduler was the bottleneck. <span class="hl">It was memcpy.
+                        It's always memcpy.</span>
+                    </p>
+                    <p>
+                        These days I'm happiest a few layers down — writing a Triton kernel,
+                        squinting at a profiler, figuring out why P99 latency refuses to behave.
+                        I also can't stop building developer tools, mostly because I keep getting
+                        annoyed at the ones that already exist.
+                    </p>
                 </div>
             </section>
 
-            <section id="projects" class="section reveal">
-                <p class="section-label">Projects</p>
-                <div class="projects">
-                    <article class="project reveal">
-                        <div class="project-head">
-                            <h3>mini-vLLM</h3>
-                            <p class="project-tag">LLM inference server</p>
-                        </div>
-                        <p class="project-tech">Python · PyTorch · Triton</p>
-                        <p class="project-summary">
-                            An LLM inference server built from scratch to study where serving actually
-                            bottlenecks.
-                        </p>
-                        <ul class="project-bullets">
-                            <li>
-                                Built a continuous-batching scheduler from scratch for Qwen2.5-1.5B on an L4 GPU.
-                                Profiling showed cache copying ate <span class="metric">57%</span> of runtime; rewriting that path got
-                                <span class="metric">1.5x</span> throughput at <span class="metric">1.5x</span> lower P99 latency.
-                            </li>
-                            <li>
-                                Added a paged KV cache that fits <span class="metric">3–5x</span> more concurrent requests in the same memory,
-                                taking KV utilization from <span class="metric">40%</span> to <span class="metric">95%</span>.
-                            </li>
-                            <li>
-                                Found that paging made decode <span class="metric">2.87x</span> slower because PyTorch copied the scattered
-                                blocks every step, then wrote a Triton kernel that reads the blocks straight from
-                                the cache and removes the copy.
-                            </li>
-                        </ul>
-                        <a href="https://github.com/sbalaji09/mini-vllm" target="_blank" class="project-link">GitHub</a>
-                    </article>
+            <!-- ░░ work ░░ -->
+            <section id="work" class="block reveal">
+                <p class="label">// things I've actually built</p>
 
-                    <article class="project reveal">
-                        <div class="project-head">
-                            <h3>Fere</h3>
-                            <p class="project-tag">Developer tool</p>
-                        </div>
-                        <p class="project-summary">
-                            A macOS app for understanding your local dev environment in real time.
-                        </p>
-                        <ul class="project-bullets">
-                            <li>Auto-discovers running services and renders a live topology graph.</li>
-                            <li>Traces request flow by intercepting traffic between services.</li>
-                            <li>
-                                Sentinel, an in-app agent, flags issues with one-click fixes and hands harder
-                                cases to coding agents over Fere's MCP server.
-                            </li>
-                        </ul>
-                        <p class="project-note">Co-founder. 2nd place and $10K at Cal Poly Innovation Quest.</p>
-                        <a href="https://getfere.com" target="_blank" class="project-link">getfere.com</a>
-                    </article>
+                <article class="project reveal">
+                    <div class="project-top">
+                        <h3>mini-vLLM</h3>
+                        <span class="project-kind">an LLM inference server, from scratch</span>
+                    </div>
+                    <p class="project-tech">Python · PyTorch · Triton</p>
+                    <p>
+                        I wanted to <em>see</em> where serving falls apart, not read about it secondhand,
+                        so I built my own inference server. I wrote a continuous-batching scheduler for
+                        Qwen2.5-1.5B on an L4, profiled it, and found cache copying was quietly eating
+                        <span class="num">57%</span> of runtime. Rewriting that path got me
+                        <span class="num">1.5x</span> the throughput at <span class="num">1.5x</span> lower
+                        P99 latency.
+                    </p>
+                    <p>
+                        Then the part I'm weirdly proud of. I added a paged KV cache to fit
+                        <span class="num">3–5x</span> more requests in the same memory
+                        (<span class="num">40%</span> → <span class="num">95%</span> utilization)… and it
+                        made decode <span class="num">2.87x</span> <em>slower</em>. PyTorch was copying the
+                        scattered cache blocks every single step. So I wrote a Triton kernel that reads the
+                        blocks straight from the cache and skips the copy entirely.
+                    </p>
+                    <p class="scribble">still a work in progress. that kernel makes me irrationally happy.</p>
+                    <a href="https://github.com/sbalaji09/mini-vllm" target="_blank" class="project-link">peek at the code</a>
+                </article>
 
-                    <article class="project reveal">
-                        <div class="project-head">
-                            <h3>Hybrid Search Engine</h3>
-                            <p class="project-tag">Systems project</p>
-                        </div>
-                        <p class="project-tech">Rust</p>
-                        <p class="project-summary">
-                            A search engine in Rust that combines keyword and vector retrieval.
-                        </p>
-                        <ul class="project-bullets">
-                            <li>
-                                Mixes BM25 with HNSW vector search over 50K MS MARCO passages. Scores
-                                <span class="metric">0.888 MRR</span>, beating keyword-only by <span class="metric">23.7%</span> and vector-only by <span class="metric">1.4%</span>.
-                            </li>
-                            <li>
-                                Holds p99 query latency under <span class="metric">20ms</span> across every mode by using Rust to keep GC
-                                pauses out of the tail.
-                            </li>
-                            <li>
-                                Custom score fusion so a hybrid result never ranks worse than vector search alone,
-                                which lifts Recall@100 to <span class="metric">98.85%</span>.
-                            </li>
-                        </ul>
-                        <a href="https://github.com/sbalaji09/SearchEngine" target="_blank" class="project-link">GitHub</a>
-                    </article>
+                <article class="project reveal">
+                    <div class="project-top">
+                        <h3>Fere</h3>
+                        <span class="project-kind">the dev tool I couldn't stop building</span>
+                    </div>
+                    <p>
+                        Understanding your own local dev environment shouldn't take three terminal tabs
+                        and a guess. Fere auto-discovers the services you've got running and draws a live
+                        topology graph, then traces request flow by intercepting traffic between them — so
+                        you can actually watch how a request moves through your stack.
+                    </p>
+                    <p>
+                        There's also Sentinel, an in-app agent that flags issues with one-click fixes and
+                        hands the genuinely hard ones off to coding agents over Fere's MCP server.
+                    </p>
+                    <p class="scribble">co-founded this one. it took 2nd place and $10k at Cal Poly Innovation Quest, which still feels a little unreal.</p>
+                    <a href="https://getfere.com" target="_blank" class="project-link">getfere.com</a>
+                </article>
 
-                    <article class="project reveal">
-                        <div class="project-head">
-                            <h3>Patent Prior Art MCP Server</h3>
-                            <p class="project-tag">MCP server</p>
-                        </div>
-                        <p class="project-tech">Go · Python · MCP</p>
-                        <p class="project-summary">
-                            An MCP server connecting Claude Desktop to the USPTO API, so prior-art search runs
-                            as plain-English queries instead of taking days. Flags relevant patents and gaps in
-                            existing claims.
-                        </p>
-                        <a href="https://github.com/sbalaji09/PatentDiscoverySystem" target="_blank" class="project-link">GitHub</a>
-                    </article>
-                </div>
+                <article class="project reveal">
+                    <div class="project-top">
+                        <h3>Hybrid Search Engine</h3>
+                        <span class="project-kind">a Rust rabbit hole</span>
+                    </div>
+                    <p class="project-tech">Rust</p>
+                    <p>
+                        I wanted to know how far I could push search relevance without wrecking tail
+                        latency. So I wrote one. It mixes BM25 with HNSW vector search over 50K MS MARCO
+                        passages and scores <span class="num">0.888 MRR</span> — beating keyword-only by
+                        <span class="num">23.7%</span> and vector-only by <span class="num">1.4%</span>.
+                    </p>
+                    <p>
+                        The fun constraint was the tail: it holds p99 query latency under
+                        <span class="num">20ms</span> across every mode, because Rust keeps GC pauses out
+                        of the picture entirely. I also wrote a custom score fusion so a hybrid result can
+                        never rank worse than vector search alone, which nudged Recall@100 up to
+                        <span class="num">98.85%</span>.
+                    </p>
+                    <p class="scribble">Rust fought me the whole way. worth it.</p>
+                    <a href="https://github.com/sbalaji09/SearchEngine" target="_blank" class="project-link">read the code</a>
+                </article>
+
+                <article class="project reveal">
+                    <div class="project-top">
+                        <h3>Patent Prior-Art MCP Server</h3>
+                        <span class="project-kind">a weekend that got out of hand</span>
+                    </div>
+                    <p class="project-tech">Go · Python · MCP</p>
+                    <p>
+                        Prior-art search is normally a multi-day slog. This is an MCP server that wires
+                        Claude Desktop straight into the USPTO API, so the search becomes a plain-English
+                        question instead. It surfaces the patents that matter and points out gaps in the
+                        existing claims.
+                    </p>
+                    <a href="https://github.com/sbalaji09/PatentDiscoverySystem" target="_blank" class="project-link">read the code</a>
+                </article>
             </section>
 
-            <section id="contact" class="section reveal">
-                <p class="section-label">Contact</p>
-                <p class="contact-line">If you're building something sharp, I'm interested.</p>
+            <!-- ░░ now ░░ -->
+            <section id="now" class="block reveal">
+                <p class="label">// what I'm into right now</p>
+                <!-- psst: keep this section honest + current. swap these out when they change. -->
+                <dl class="now-grid">
+                    <div class="now-item reveal">
+                        <dt>learning</dt>
+                        <dd>Triton kernels, and exactly how much I don't know about GPU memory.</dd>
+                    </div>
+                    <div class="now-item reveal">
+                        <dt>building</dt>
+                        <dd>Fere, plus a faster paged-attention path for mini-vLLM.</dd>
+                    </div>
+                    <div class="now-item reveal">
+                        <dt>reading</dt>
+                        <dd>The PagedAttention paper. Again. I think this is the third time.</dd>
+                    </div>
+                    <div class="now-item reveal">
+                        <dt>on repeat</dt>
+                        <dd>The same playlist I've had since 2021. I'm aware this is a problem.</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <!-- ░░ contact ░░ -->
+            <section id="contact" class="block reveal">
+                <p class="label">// say hi</p>
+                <p class="contact-line">My inbox is genuinely open.</p>
+                <p class="contact-body">
+                    If you're working on something hard in inference or dev tooling — or you just
+                    want to argue about whether <code>memcpy</code> is the root of all evil — send me
+                    a note. I answer everything that isn't trying to sell me SEO.
+                </p>
                 <div class="contact-links">
-                    <a href="mailto:siddharthbalaji6@gmail.com">siddharthbalaji6@gmail.com</a>
-                    <a href="https://www.linkedin.com/in/siddharthbalaji-engineer" target="_blank">LinkedIn</a>
-                    <a href="https://github.com/sbalaji09" target="_blank">GitHub</a>
+                    <a href="mailto:siddharthbalaji6@gmail.com">email me</a>
+                    <a href="https://www.linkedin.com/in/siddharthbalaji-engineer" target="_blank">linkedin</a>
+                    <a href="https://github.com/sbalaji09" target="_blank">github</a>
                 </div>
             </section>
         </main>
+
+        <footer class="footer">
+            <p>Made by hand. No framework, no template, one stubborn person.</p>
+            <p class="footer-secret">You scrolled all the way down here. That makes you my favorite kind of visitor. <span class="soft">(there's a note in the source code for you too.)</span></p>
+        </footer>
     </div>
 </body>
 </html>
