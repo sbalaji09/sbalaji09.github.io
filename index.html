@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Siddharth's Website</title>
+    <title>Siddharth Balaji</title>
+    <meta name="description" content="Siddharth Balaji — I build systems for LLM inference and the developer tools around them.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
 </head>
@@ -18,154 +19,151 @@
                 <a href="#experience">Experience</a>
                 <a href="#projects">Projects</a>
                 <a href="#contact">Contact</a>
-                <a href="Resume.pdf" target="_blank" class="resume-link">Resume</a>
+                <a href="/Resume.pdf" target="_blank" class="resume-link">Resume</a>
             </nav>
         </header>
 
         <main>
-            <section id="intro" class="hero-panel">
-                <p class="eyebrow">Software engineer, builder, and CS student.</p>
-                <h1>Siddharth Balaji</h1>
-                <p class="hero-copy">
-                    I build across distributed systems, developer tools, and AI/ML.
-                    Incoming Software Engineer Intern at Dell Technologies. Always interested in ambitious product and infrastructure work.
+            <section id="intro" class="hero">
+                <h1>I build systems for LLM inference and the developer tools around them.</h1>
+                <p class="hero-sub">
+                    Co-founder of Fere, a macOS developer tool (2nd place and $10K at Cal Poly
+                    Innovation Quest). Software engineer intern at Dell Technologies working on AI
+                    server and networking infrastructure. CS at Cal Poly.
                 </p>
-                <a href="#experience" class="scroll-link">Scroll to see selected work</a>
             </section>
 
-            <section id="experience" class="section-block reveal">
-                <div class="section-layout">
-                    <div class="section-heading reveal">
-                        <p class="eyebrow">Experience</p>
-                        <h2>Work that shaped how I build.</h2>
-                    </div>
-
-                    <div class="section-content">
-                        <div class="experience-row">
-                            <article class="experience-column reveal">
-                                <p class="experience-meta">June 2026 - August 2026</p>
-                                <h3>Incoming Software Engineer Intern</h3>
-                                <p class="experience-place">Dell Technologies · Round Rock, TX</p>
-                                <p>
-                                    Joining Dell this summer to work on production engineering problems at scale.
-                                </p>
-                            </article>
-
-                            <article class="experience-column reveal">
-                                <p class="experience-meta">November 2025 - Present</p>
-                                <h3>Software Engineer</h3>
-                                <p class="experience-place">Hack4Impact Cal Poly</p>
-                                <p>
-                                    Built a landing page and volunteer sign-up system for Much Hope, enabling outreach volunteers to register directly through the site. Shipped REST APIs and responsive UI components in React, TypeScript, and Node.js.
-                                </p>
-                            </article>
-
-                            <article class="experience-column reveal">
-                                <p class="experience-meta">October 2025 - Present</p>
-                                <h3>Tech Lead</h3>
-                                <p class="experience-place">Codebox Cal Poly</p>
-                                <p>
-                                    Lead a 7+ engineer team building a React Native campus navigation app, defining technical standards across frontend and backend systems and designing the core data model for amenity discovery.
-                                </p>
-                            </article>
+            <section id="experience" class="section reveal">
+                <p class="section-label">Experience</p>
+                <div class="entries">
+                    <article class="entry reveal">
+                        <div class="entry-head">
+                            <h3>Dell Technologies <span class="entry-role">— Software Engineer Intern</span></h3>
+                            <p class="entry-meta">June 2026 – Present · Round Rock, TX</p>
                         </div>
-                    </div>
+                        <p class="entry-body">
+                            Building a CI/CD pipeline and full-stack app to run rack- and cluster-level
+                            (L11/L12) diagnostics against virtual server IPs, so the tests don't need physical
+                            hardware. Built a Redis and Celery queue that processes IP-lease requests in the
+                            background, off the main request path.
+                        </p>
+                    </article>
+
+                    <article class="entry reveal">
+                        <div class="entry-head">
+                            <h3>Codebox <span class="entry-role">— Tech Lead</span></h3>
+                            <p class="entry-meta">Oct 2025 – Present · Cal Poly</p>
+                        </div>
+                        <p class="entry-body">
+                            Lead an 8-engineer team building MustangMaps, a React Native campus navigation app
+                            used by 150+ Cal Poly students. Designed the GeoJSON schema and the indexing behind
+                            the nearest-amenity lookups.
+                        </p>
+                    </article>
                 </div>
             </section>
 
-            <section id="projects" class="section-block reveal">
-                <div class="section-layout">
-                    <div class="section-heading reveal">
-                        <p class="eyebrow">Projects</p>
-                        <h2>Things I built because the existing tools were not enough.</h2>
-                    </div>
-
-                    <div class="section-content">
-                        <div class="projects-stack">
-                            <article class="project-card reveal">
-                                <div class="project-topline">
-                                    <h3>Fere</h3>
-                                    <span>Developer tool</span>
-                                </div>
-                                <p class="project-summary">
-                                    A macOS app for understanding local development environments in real time.
-                                </p>
-                                <ul class="project-bullets">
-                                    <li>Auto-discovers services and renders live topology graphs.</li>
-                                    <li>Traces request flow by intercepting traffic between services.</li>
-                                    <li>Includes API testing, Docker log streaming, and database exploration.</li>
-                                </ul>
-                                <a href="https://getfere.com" target="_blank" class="project-link-btn">Open Website</a>
-                            </article>
-
-                            <article class="project-card reveal">
-                                <div class="project-topline">
-                                    <h3>Search Engine</h3>
-                                    <span>Systems project</span>
-                                </div>
-                                <p class="project-summary">
-                                    A search engine in Rust with both lexical retrieval and vector search.
-                                </p>
-                                <ul class="project-bullets">
-                                    <li>Built full-text indexing, tokenization, and concurrent query execution from scratch.</li>
-                                    <li>Combined BM25 with HNSW vector retrieval to reach 0.89 MRR on benchmarks.</li>
-                                    <li>Used Rust’s type system to keep indexing memory-safe under concurrency.</li>
-                                </ul>
-                                <a href="https://github.com/sbalaji09/SearchEngine" target="_blank" class="project-link-btn">Open GitHub Repo</a>
-                            </article>
-
-                            <article class="project-card reveal">
-                                <div class="project-topline">
-                                    <h3>ResearchQ</h3>
-                                    <span>AI / ML</span>
-                                </div>
-                                <p class="project-summary">
-                                    A research assistant that synthesizes findings across academic papers.
-                                </p>
-                                <ul class="project-bullets">
-                                    <li>Queries and synthesizes across 20+ papers using retrieval-augmented generation.</li>
-                                    <li>Generates structured literature reviews with clustering of related findings.</li>
-                                    <li>Keeps every synthesized claim source-linked back to the original paper.</li>
-                                </ul>
-                                <a href="https://github.com/sbalaji09/LogBuilder" target="_blank" class="project-link-btn">Open GitHub Repo</a>
-                            </article>
-
-                            <article class="project-card reveal">
-                                <div class="project-topline">
-                                    <h3>Federated Learning Research</h3>
-                                    <span>Research</span>
-                                </div>
-                                <p class="project-summary">
-                                    Federated learning research done under Stanford PhD mentorship.
-                                </p>
-                                <ul class="project-bullets">
-                                    <li>Co-authored work on CNN architectures in federated learning environments.</li>
-                                    <li>Reached 93% accuracy with AlexNet while preserving distributed data privacy.</li>
-                                    <li>Benchmarked architecture tradeoffs under simulated client heterogeneity.</li>
-                                </ul>
-                            </article>
+            <section id="projects" class="section reveal">
+                <p class="section-label">Projects</p>
+                <div class="projects">
+                    <article class="project reveal">
+                        <div class="project-head">
+                            <h3>mini-vLLM</h3>
+                            <p class="project-tag">LLM inference server</p>
                         </div>
-                    </div>
+                        <p class="project-tech">Python · PyTorch · Triton</p>
+                        <p class="project-summary">
+                            An LLM inference server built from scratch to study where serving actually
+                            bottlenecks.
+                        </p>
+                        <ul class="project-bullets">
+                            <li>
+                                Built a continuous-batching scheduler from scratch for Qwen2.5-1.5B on an L4 GPU.
+                                Profiling showed cache copying ate <span class="metric">57%</span> of runtime; rewriting that path got
+                                <span class="metric">1.5x</span> throughput at <span class="metric">1.5x</span> lower P99 latency.
+                            </li>
+                            <li>
+                                Added a paged KV cache that fits <span class="metric">3–5x</span> more concurrent requests in the same memory,
+                                taking KV utilization from <span class="metric">40%</span> to <span class="metric">95%</span>.
+                            </li>
+                            <li>
+                                Found that paging made decode <span class="metric">2.87x</span> slower because PyTorch copied the scattered
+                                blocks every step, then wrote a Triton kernel that reads the blocks straight from
+                                the cache and removes the copy.
+                            </li>
+                        </ul>
+                        <a href="https://github.com/sbalaji09/mini-vllm" target="_blank" class="project-link">GitHub</a>
+                    </article>
+
+                    <article class="project reveal">
+                        <div class="project-head">
+                            <h3>Fere</h3>
+                            <p class="project-tag">Developer tool</p>
+                        </div>
+                        <p class="project-summary">
+                            A macOS app for understanding your local dev environment in real time.
+                        </p>
+                        <ul class="project-bullets">
+                            <li>Auto-discovers running services and renders a live topology graph.</li>
+                            <li>Traces request flow by intercepting traffic between services.</li>
+                            <li>
+                                Sentinel, an in-app agent, flags issues with one-click fixes and hands harder
+                                cases to coding agents over Fere's MCP server.
+                            </li>
+                        </ul>
+                        <p class="project-note">Co-founder. 2nd place and $10K at Cal Poly Innovation Quest.</p>
+                        <a href="https://getfere.com" target="_blank" class="project-link">getfere.com</a>
+                    </article>
+
+                    <article class="project reveal">
+                        <div class="project-head">
+                            <h3>Hybrid Search Engine</h3>
+                            <p class="project-tag">Systems project</p>
+                        </div>
+                        <p class="project-tech">Rust</p>
+                        <p class="project-summary">
+                            A search engine in Rust that combines keyword and vector retrieval.
+                        </p>
+                        <ul class="project-bullets">
+                            <li>
+                                Mixes BM25 with HNSW vector search over 50K MS MARCO passages. Scores
+                                <span class="metric">0.888 MRR</span>, beating keyword-only by <span class="metric">23.7%</span> and vector-only by <span class="metric">1.4%</span>.
+                            </li>
+                            <li>
+                                Holds p99 query latency under <span class="metric">20ms</span> across every mode by using Rust to keep GC
+                                pauses out of the tail.
+                            </li>
+                            <li>
+                                Custom score fusion so a hybrid result never ranks worse than vector search alone,
+                                which lifts Recall@100 to <span class="metric">98.85%</span>.
+                            </li>
+                        </ul>
+                        <a href="https://github.com/sbalaji09/SearchEngine" target="_blank" class="project-link">GitHub</a>
+                    </article>
+
+                    <article class="project reveal">
+                        <div class="project-head">
+                            <h3>Patent Prior Art MCP Server</h3>
+                            <p class="project-tag">MCP server</p>
+                        </div>
+                        <p class="project-tech">Go · Python · MCP</p>
+                        <p class="project-summary">
+                            An MCP server connecting Claude Desktop to the USPTO API, so prior-art search runs
+                            as plain-English queries instead of taking days. Flags relevant patents and gaps in
+                            existing claims.
+                        </p>
+                        <a href="https://github.com/sbalaji09/PatentDiscoverySystem" target="_blank" class="project-link">GitHub</a>
+                    </article>
                 </div>
             </section>
 
-            <section id="contact" class="section-block section-block-last contact-section reveal">
-                <div class="section-layout contact-layout">
-                    <div class="section-heading contact-heading reveal">
-                        <p class="eyebrow">Contact</p>
-                        <h2>If you are building something sharp, I’m interested.</h2>
-                    </div>
-
-                    <div class="section-content contact-content">
-                        <div class="contact-panel reveal">
-                            <p class="contact-line">siddharthbalaji6@gmail.com</p>
-                            <div class="contact-links">
-                                <a href="mailto:siddharthbalaji6@gmail.com">Email</a>
-                                <a href="https://www.linkedin.com/in/siddharth-balaji-9b47712a5/" target="_blank">LinkedIn</a>
-                                <a href="https://github.com/sbalaji09" target="_blank">GitHub</a>
-                            </div>
-                        </div>
-                    </div>
+            <section id="contact" class="section reveal">
+                <p class="section-label">Contact</p>
+                <p class="contact-line">If you're building something sharp, I'm interested.</p>
+                <div class="contact-links">
+                    <a href="mailto:siddharthbalaji6@gmail.com">siddharthbalaji6@gmail.com</a>
+                    <a href="https://www.linkedin.com/in/siddharthbalaji-engineer" target="_blank">LinkedIn</a>
+                    <a href="https://github.com/sbalaji09" target="_blank">GitHub</a>
                 </div>
             </section>
         </main>
