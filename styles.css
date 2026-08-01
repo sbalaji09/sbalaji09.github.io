@@ -41,7 +41,7 @@ body {
     line-height: 1.65;
     -webkit-font-smoothing: antialiased;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 a {
@@ -52,12 +52,14 @@ a {
     transition: text-decoration-color .15s ease;
 }
 a:hover { text-decoration-color: var(--ink); }
+a:visited { color: var(--ink); }
 
 .page {
-    width: min(calc(100% - 48px), var(--w));
+    width: min(calc(100% - 96px), var(--w));
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    margin-left: clamp(24px, 6vw, 64px);
     padding: 72px 0 40px;
     text-align: left;
 }
@@ -75,22 +77,28 @@ a:hover { text-decoration-color: var(--ink); }
 .bio {
     max-width: 56ch;
     margin: 0 0 40px;
+    padding: 0;
+    list-style: none;
     color: var(--muted);
+}
+.bio li {
+    margin: 0 0 6px;
+}
+.bio li::before {
+    content: "- ";
 }
 
 /* ── tab nav (shared across pages) ── */
 nav.tabs {
     display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 8px;
     margin-bottom: 40px;
     font-size: 0.95rem;
 }
-nav.tabs a { text-decoration: none; }
+nav.tabs a { text-decoration: none; align-self: flex-start; }
 nav.tabs a:hover { text-decoration: underline; text-decoration-color: var(--ink); }
-nav.tabs a.is-current { color: var(--muted); pointer-events: none; }
-nav.tabs a::before { content: "["; color: var(--muted); }
-nav.tabs a::after { content: "]"; color: var(--muted); }
+nav.tabs a.is-current { font-weight: 700; }
 
 /* ── page title (projects / reading) ── */
 h1 {
