@@ -156,6 +156,7 @@ h1 {
 }
 .reading-item .title { font-weight: 700; }
 .reading-item .by { color: var(--muted); font-size: 0.95rem; }
+.reading-item .desc { margin: 6px 0 0; max-width: 56ch; color: var(--muted); }
 
 /* ── footer (contact) ── */
 footer {
