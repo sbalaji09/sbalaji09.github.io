@@ -25,7 +25,8 @@
     --ink: #111;
     --muted: #666;
     --line: #e5e5e5;
-    --w: 640px;
+    --w: 700px;
+    --side: clamp(24px, 6vw, 64px);
 }
 
 html, body {
@@ -59,21 +60,18 @@ a:visited { color: var(--ink); }
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    margin-left: clamp(24px, 6vw, 64px);
+    margin-left: var(--side);
     padding: 72px 0 40px;
     text-align: left;
 }
 
 .content { flex: 1 0 auto; }
 
-/* ── top row: heading on the left, nav on the right ── */
+/* ── top row: heading on the left ── */
 .top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 32px;
     margin-bottom: 40px;
 }
+.intro-block { min-width: 0; }
 
 /* ── home ── */
 .name {
@@ -97,15 +95,18 @@ a:visited { color: var(--ink); }
     content: "- ";
 }
 
-/* ── tab nav (shared across pages) ── */
+/* ── tab nav (shared across pages, pinned to the right wall) ── */
 nav.tabs {
+    position: fixed;
+    top: 40px;
+    right: var(--side);
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 8px;
-    flex-shrink: 0;
     font-size: 0.95rem;
 }
+nav.tabs.align-with-bio { top: 113px; }
 nav.tabs a { text-decoration: none; }
 nav.tabs a:hover { text-decoration: underline; text-decoration-color: var(--ink); }
 nav.tabs a.is-current { font-weight: 700; }
@@ -173,4 +174,9 @@ footer .contact-links {
 
 @media (max-width: 640px) {
     .page { width: calc(100% - 32px); padding: 48px 0 32px; }
+    nav.tabs {
+        position: static;
+        margin-bottom: 40px;
+    }
+    nav.tabs.align-with-bio { top: auto; }
 }
