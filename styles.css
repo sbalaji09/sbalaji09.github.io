@@ -95,6 +95,18 @@ a:visited { color: var(--ink); }
     content: "- ";
 }
 
+/* ── ascii swimmer ── */
+.ascii-swim {
+    margin-top: 8px;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+.ascii-swim canvas {
+    display: block;
+    width: 100%;
+}
+
 /* ── tab nav (shared across pages, pinned to the right wall) ── */
 nav.tabs {
     position: fixed;
