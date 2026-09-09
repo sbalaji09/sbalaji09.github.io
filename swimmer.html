@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>front crawl</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --fg: #d4d4d4;
+    --muted: #8a8a8a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); }
+  body {
+    font-family: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    color: var(--fg);
+    -webkit-font-smoothing: antialiased;
+  }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .caption {
+    position: fixed;
+    left: 26px;
+    bottom: 24px;
+    font-size: .6875rem;
+    letter-spacing: .14em;
+    color: var(--muted);
+    user-select: none;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="caption">front crawl</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ─────────────────────────────────────────────────────────────
+     TUNABLE CONSTANTS
+     ───────────────────────────────────────────────────────────── */
+  var CFG = {
+    // stroke mechanics
+    strokeRate:   0.50,   // full arm cycles (both arms) per second
+    kickBeats:    6,      // kicks per full arm cycle — 6-beat flutter
+    swimSpeed:    1.45,   // m/s forward travel; drives water + wake scroll
+    rollMax:      0.62,   // rad — body roll each side (~36°)
+    breathEvery:  3,      // breathe every N strokes (bilateral)
+    breathAngle:  1.00,   // rad — peak head yaw when breathing (~57°)
+
+    // figure
+    bodyHeight:   1.85,   // m
+    screenFrac:   0.82,   // fingertip→toe span as a fraction of viewport width
+    bodyDepth:   -0.10,   // m — long axis sits just under the surface (z=0)
+
+    // camera — orbits the swimmer; elevation is what makes the stroke legible
+    camDist:      6.4,    // metres from the swimmer
+    camElev:      19,     // degrees above the water plane
+    camAzim:      6,      // degrees off a pure side-on view
+    camTargetZ:  -0.06,
+
+    // halftone lattice
+    dotSpacing:   5.0,    // css px — lattice pitch for the figure
+    seaSpacingMul: 2,     // sea lattice is coarser than the figure's
+    dotSize:      2.0,    // css px
+    dotCount:     15000,  // body points (scaled down on small screens)
+    maxCells:     62000,  // lattice budget; spacing grows on huge displays
+
+    // tone
+    colFigure: [214, 219, 228],
+    colSea:    [148, 162, 184],
+    figureGain: 0.58,     // density → brightness (low, so volume reads as tone)
+    ditherFig:  0.50,     // dither strength (edges scatter into loose dots)
+    ditherSea:  1.70
+  };
+
+  var TAU = Math.PI * 2;
+  var LEVELS = 8;
+
+  var canvas = document.getElementById("c");
+  var ctx = canvas.getContext("2d", { alpha: false });
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ─────────────────────────────────────────────────────────────
+     SMALL MATH HELPERS
+     ───────────────────────────────────────────────────────────── */
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function frac(v) { return v - Math.floor(v); }
+  function smoothstep(e0, e1, x) {
+    var t = clamp((x - e0) / (e1 - e0), 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+  function hash1(n) {
+    n = (n << 13) ^ n;
+    return ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 0x7fffffff;
+  }
+
+  // sine lookup — the wave field evaluates thousands of sines per frame
+  var SIN_N = 4096, SIN_T = new Float32Array(SIN_N + 1), SIN_K = SIN_N / TAU;
+  for (var si = 0; si <= SIN_N; si++) SIN_T[si] = Math.sin(si / SIN_N * TAU);
+  function fsin(x) {
+    var f = x * SIN_K, i = f | 0, r = f - i;
+    i = ((i % SIN_N) + SIN_N) % SIN_N;
+    var a = SIN_T[i];
+    return a + (SIN_T[i + 1] - a) * r;
+  }
+  function fcos(x) { return fsin(x + Math.PI * 0.5); }
+
+  /* ─────────────────────────────────────────────────────────────
+     BODY DEFINITION — proportioned human, metres
+     Body-local frame: +x forward (swim direction), +y to the
+     swimmer's LEFT, +z dorsal (back / toward the surface).
+     ───────────────────────────────────────────────────────────── */
+  var H = CFG.bodyHeight;
+  var SEG = {
+    torso:      0.288 * H,   // hip centre → shoulder centre
+    neck:       0.052 * H,
+    upperArm:   0.186 * H,
+    forearm:    0.146 * H,
+    hand:       0.106 * H,
+    thigh:      0.245 * H,
+    shank:      0.246 * H,
+    foot:       0.150 * H,
+    shoulderHW: 0.106 * H,   // half biacromial breadth
+    hipHW:      0.050 * H
+  };
+  // fingertip at full forward extension → pointed toe; sets the on-screen scale
+  var BODY_SPAN = 2.42;
+
+  // Part table. Each part is a volume swept along an axis with an
+  // elliptical cross-section: radius r1 along e1, r2 along e2.
+  // `n` biases dot density — torso and head carry the most.
+  var PARTS = [
+    { name: "torso",  n: 4300, kind: "capsule",
+      r1: [0.118, 0.150, 0.196, 0.206, 0.188],       // lateral half-width, hips→shoulders
+      r2: [0.104, 0.110, 0.128, 0.132, 0.120] },     // dorsoventral half-thickness
+    { name: "neck",   n: 260,  kind: "capsule", r1: [0.058, 0.054], r2: [0.060, 0.056] },
+    { name: "head",   n: 1500, kind: "ellipsoid", rx: 0.118, ry: 0.083, rz: 0.098 },
+    { name: "uarmR",  n: 900,  kind: "capsule", r1: [0.058, 0.044], r2: [0.062, 0.046] },
+    { name: "uarmL",  n: 900,  kind: "capsule", r1: [0.058, 0.044], r2: [0.062, 0.046] },
+    { name: "foreR",  n: 700,  kind: "capsule", r1: [0.046, 0.030], r2: [0.048, 0.032] },
+    { name: "foreL",  n: 700,  kind: "capsule", r1: [0.046, 0.030], r2: [0.048, 0.032] },
+    { name: "handR",  n: 420,  kind: "capsule", r1: [0.044, 0.036], r2: [0.014, 0.011] },
+    { name: "handL",  n: 420,  kind: "capsule", r1: [0.044, 0.036], r2: [0.014, 0.011] },
+    { name: "thighR", n: 1020, kind: "capsule", r1: [0.088, 0.060], r2: [0.092, 0.062] },
+    { name: "thighL", n: 1020, kind: "capsule", r1: [0.088, 0.060], r2: [0.092, 0.062] },
+    { name: "shankR", n: 760,  kind: "capsule", r1: [0.060, 0.034], r2: [0.062, 0.036] },
+    { name: "shankL", n: 760,  kind: "capsule", r1: [0.060, 0.034], r2: [0.062, 0.036] },
+    { name: "footR",  n: 340,  kind: "capsule", r1: [0.038, 0.030], r2: [0.024, 0.016] },
+    { name: "footL",  n: 340,  kind: "capsule", r1: [0.038, 0.030], r2: [0.024, 0.016] }
+  ];
+  var IDX = {};
+  for (var pi = 0; pi < PARTS.length; pi++) IDX[PARTS[pi].name] = pi;
+  var NPARTS = PARTS.length;
+
+  function profile(tbl, u) {                 // piecewise-linear radius profile
+    if (tbl.length === 1) return tbl[0];
+    var f = u * (tbl.length - 1), i = clamp(f | 0, 0, tbl.length - 2);
+    return tbl[i] + (tbl[i + 1] - tbl[i]) * (f - i);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     POINT CLOUD — sampled once, in each part's own local frame.
+     Because bone lengths and radii are rigid, every point's local
+     offset (a along the axis, b along e1, c along e2) is constant;
+     per frame we only transform the part frames.
+     ───────────────────────────────────────────────────────────── */
+  var PA, PB, PC, PEDGE, PPH, partStart, partCount, totalPts;
+
+  function buildCloud(budget) {
+    var scale = budget / CFG.dotCount, i, p;
+    partStart = new Int32Array(NPARTS);
+    partCount = new Int32Array(NPARTS);
+    totalPts = 0;
+    for (i = 0; i < NPARTS; i++) {
+      partCount[i] = Math.max(40, Math.round(PARTS[i].n * scale));
+      partStart[i] = totalPts;
+      totalPts += partCount[i];
+    }
+    PA = new Float32Array(totalPts);
+    PB = new Float32Array(totalPts);
+    PC = new Float32Array(totalPts);
+    PEDGE = new Float32Array(totalPts);
+    PPH = new Float32Array(totalPts);
+
+    for (i = 0; i < NPARTS; i++) {
+      p = PARTS[i];
+      var s = partStart[i], n = partCount[i], len = partLength(p.name);
+      for (var k = 0; k < n; k++) {
+        var j = s + k, rho;
+        if (p.kind === "ellipsoid") {
+          var ux, uy, uz, d2;                       // uniform in the unit ball
+          do {
+            ux = Math.random() * 2 - 1; uy = Math.random() * 2 - 1; uz = Math.random() * 2 - 1;
+            d2 = ux * ux + uy * uy + uz * uz;
+          } while (d2 > 1);
+          PA[j] = ux * p.rx; PB[j] = uy * p.ry; PC[j] = uz * p.rz;
+          rho = Math.sqrt(d2);
+        } else {
+          var u = Math.random();
+          var ang = Math.random() * TAU;
+          var rr = Math.sqrt(Math.random());        // area-uniform in the disk
+          // round the ends so limbs read as capsules, not cylinders
+          var cap = Math.sqrt(clamp(1 - Math.pow(Math.abs(2 * u - 1), 6), 0, 1));
+          PA[j] = u * len;
+          PB[j] = Math.cos(ang) * rr * profile(p.r1, u) * cap;
+          PC[j] = Math.sin(ang) * rr * profile(p.r2, u) * cap;
+          rho = rr;
+        }
+        PEDGE[j] = smoothstep(0.72, 1.0, rho);      // surface points shimmer / scatter
+        PPH[j] = Math.random() * TAU;
+      }
+    }
+  }
+
+  function partLength(name) {
+    switch (name) {
+      case "torso": return SEG.torso;
+      case "neck": return SEG.neck;
+      case "uarmR": case "uarmL": return SEG.upperArm;
+      case "foreR": case "foreL": return SEG.forearm;
+      case "handR": case "handL": return SEG.hand;
+      case "thighR": case "thighL": return SEG.thigh;
+      case "shankR": case "shankL": return SEG.shank;
+      case "footR": case "footL": return SEG.foot;
+      default: return 0;
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     STROKE PATHS
+     Hand (wrist) path through one arm cycle, relative to that
+     shoulder, as (x forward, out lateral, z dorsal). Keys are
+     unevenly spaced in time on purpose: the hand accelerates
+     through the pull and decelerates through the recovery.
+     ───────────────────────────────────────────────────────────── */
+  var HAND_KEYS = [
+    [0.00,  0.55,  0.13, -0.04],   // entry — hand pierces the water ahead
+    [0.10,  0.50,  0.17, -0.20],   // catch — elbow stays high, hand presses
+    [0.22,  0.36,  0.20, -0.32],   // early pull
+    [0.34,  0.10,  0.14, -0.36],   // mid pull, under the chest
+    [0.45, -0.16,  0.11, -0.28],   // push
+    [0.55, -0.34,  0.17, -0.06],   // exit at the hip
+    [0.63, -0.36,  0.28,  0.12],   // recovery begins, elbow leads
+    [0.75, -0.12,  0.36,  0.24],   // high-elbow recovery over the surface
+    [0.87,  0.24,  0.30,  0.22],   // swinging forward
+    [0.95,  0.46,  0.20,  0.06]    // reaching to re-enter
+  ];
+  // Elbow pole direction through the cycle — what keeps the elbow high.
+  var POLE_KEYS = [
+    [0.00,  0.25, 0.55, 0.55],
+    [0.15,  0.10, 0.72, 0.68],
+    [0.35, -0.05, 0.75, 0.62],
+    [0.55, -0.25, 0.62, 0.72],
+    [0.70, -0.20, 0.42, 0.92],
+    [0.88,  0.05, 0.45, 0.86]
+  ];
+
+  // Catmull-Rom through a cyclic key list; smooth position and smooth
+  // velocity, so nothing in the stroke snaps.
+  function splineCyclic(keys, t, out) {
+    var n = keys.length, i;
+    t = frac(t);
+    var seg = 0;
+    for (i = 0; i < n; i++) {
+      var t0 = keys[i][0], t1 = (i === n - 1) ? 1.0 : keys[i + 1][0];
+      if (t >= t0 && t < t1) { seg = i; break; }
+    }
+    var a = keys[seg][0];
+    var b = (seg === n - 1) ? 1.0 : keys[seg + 1][0];
+    var u = (b > a) ? (t - a) / (b - a) : 0;
+    var k0 = keys[(seg - 1 + n) % n], k1 = keys[seg],
+        k2 = keys[(seg + 1) % n],     k3 = keys[(seg + 2) % n];
+    var u2 = u * u, u3 = u2 * u;
+    for (i = 1; i <= 3; i++) {
+      out[i - 1] = 0.5 * ((2 * k1[i]) +
+        (-k0[i] + k2[i]) * u +
+        (2 * k0[i] - 5 * k1[i] + 4 * k2[i] - k3[i]) * u2 +
+        (-k0[i] + 3 * k1[i] - 3 * k2[i] + k3[i]) * u3);
+    }
+    return out;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     SKELETON POSE
+     ───────────────────────────────────────────────────────────── */
+  var J = {};                                  // joint positions, body-local
+  ["hipC","shoulderC","headC","neckA","neckB",
+   "shR","shL","hipR","hipL","elbR","elbL","wrR","wrL","tipR","tipL",
+   "kneeR","kneeL","ankR","ankL","toeR","toeL"].forEach(function (k) {
+    J[k] = new Float32Array(3);
+  });
+  var _v3a = new Float32Array(3), _v3b = new Float32Array(3), _v3c = new Float32Array(3);
+  var headAxis = new Float32Array(3), headSide = new Float32Array(3), headUp = new Float32Array(3);
+  var pose = { roll: 0, yaw: 0, pitch: 0, bob: 0, breath: 0, phR: 0, phL: 0 };
+
+  // Two-bone IK. Places the elbow using a pole vector so the arm keeps
+  // a high elbow rather than collapsing into whatever plane it likes.
+  function solveIK(sx, sy, sz, tx, ty, tz, l1, l2, px, py, pz, out) {
+    var dx = tx - sx, dy = ty - sy, dz = tz - sz;
+    var d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-5;
+    var dmax = l1 + l2 - 0.008, dmin = Math.abs(l1 - l2) + 0.02;
+    var dc = clamp(d, dmin, dmax);
+    var ax = dx / d, ay = dy / d, az = dz / d;
+    var a = (l1 * l1 - l2 * l2 + dc * dc) / (2 * dc);
+    var h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+    // orthogonalise the pole against the shoulder→hand axis
+    var pd = px * ax + py * ay + pz * az;
+    var ox = px - ax * pd, oy = py - ay * pd, oz = pz - az * pd;
+    var ol = Math.sqrt(ox * ox + oy * oy + oz * oz);
+    if (ol < 1e-4) { ox = -az; oy = 0; oz = ax; ol = Math.sqrt(ox * ox + oz * oz) || 1; }
+    ox /= ol; oy /= ol; oz /= ol;
+    out[0] = sx + ax * a + ox * h;
+    out[1] = sy + ay * a + oy * h;
+    out[2] = sz + az * a + oz * h;
+  }
+
+  function poseArm(side, ph, shoulder, elb, wr, tip) {
+    var s = (side < 0) ? -1 : 1;               // +1 = swimmer's left (+y)
+    var hp = splineCyclic(HAND_KEYS, ph, _v3a);
+    var wx = shoulder[0] + hp[0], wy = shoulder[1] + s * hp[1], wz = shoulder[2] + hp[2];
+    var pl = splineCyclic(POLE_KEYS, ph, _v3b);
+    solveIK(shoulder[0], shoulder[1], shoulder[2], wx, wy, wz,
+            SEG.upperArm, SEG.forearm, pl[0], s * pl[1], pl[2], elb);
+    wr[0] = wx; wr[1] = wy; wr[2] = wz;
+
+    // hand continues the forearm, steered toward the path tangent so the
+    // palm leads through the pull and the fingers lead into the entry
+    var fx = wx - elb[0], fy = wy - elb[1], fz = wz - elb[2];
+    var fl = Math.sqrt(fx * fx + fy * fy + fz * fz) || 1;
+    fx /= fl; fy /= fl; fz /= fl;
+    var t2 = splineCyclic(HAND_KEYS, ph + 0.02, _v3c);
+    var tgx = t2[0] - hp[0], tgy = s * (t2[1] - hp[1]), tgz = t2[2] - hp[2];
+    var tl = Math.sqrt(tgx * tgx + tgy * tgy + tgz * tgz) || 1;
+    var hx = fx * 0.68 + (tgx / tl) * 0.32;
+    var hy = fy * 0.68 + (tgy / tl) * 0.32;
+    var hz = fz * 0.68 + (tgz / tl) * 0.32;
+    var hl = Math.sqrt(hx * hx + hy * hy + hz * hz) || 1;
+    tip[0] = wx + hx / hl * SEG.hand;
+    tip[1] = wy + hy / hl * SEG.hand;
+    tip[2] = wz + hz / hl * SEG.hand;
+  }
+
+  function poseLeg(hip, phase, knee, ank, toe) {
+    // Flutter kick driven from the hip; the knee lags, whipping the
+    // shank, and the ankle lags again — loose, pointed feet.
+    // Small amplitudes: a flutter kick is a narrow, fast whip from the
+    // hips, not a scissor. The knee lags the hip and the ankle lags again.
+    var hipAng   = 0.13 * fsin(phase);
+    var kneeFlex = 0.20 + 0.20 * fsin(phase - 1.15);
+    if (kneeFlex < 0) kneeFlex = 0;                       // knees bend one way only
+    var ankAng   = 0.34 + 0.12 * fsin(phase - 2.0);
+    var splay    = (hip === J.hipR) ? -0.055 : 0.055;     // slight natural splay
+
+    var a1 = hipAng;
+    knee[0] = hip[0] - Math.cos(a1) * SEG.thigh;
+    knee[1] = hip[1] + splay * 0.35;
+    knee[2] = hip[2] + Math.sin(a1) * SEG.thigh;
+
+    var a2 = a1 + kneeFlex;
+    ank[0] = knee[0] - Math.cos(a2) * SEG.shank;
+    ank[1] = knee[1] + splay * 0.30;
+    ank[2] = knee[2] + Math.sin(a2) * SEG.shank;
+
+    var a3 = a2 - ankAng;
+    toe[0] = ank[0] - Math.cos(a3) * SEG.foot;
+    toe[1] = ank[1] + splay * 0.15;
+    toe[2] = ank[2] + Math.sin(a3) * SEG.foot;
+  }
+
+  function updatePose(t) {
+    var cyc = t * CFG.strokeRate;
+    var phR = frac(cyc), phL = frac(cyc + 0.5);
+    pose.phR = phR; pose.phL = phL;
+
+    // Body roll — the single strongest cue that this is a swimmer and
+    // not a flailing figure. Rolls toward whichever arm is pulling.
+    pose.roll  = CFG.rollMax * fsin(TAU * phR);
+    pose.yaw   = 0.035 * fsin(TAU * phR + 1.2);
+    pose.pitch = -0.045 + 0.022 * fsin(TAU * 2 * phR);
+    pose.bob   = 0.013 * fsin(TAU * 2 * phR + 0.7);
+
+    // Breathing: every `breathEvery` strokes, to the side of the
+    // recovering arm, alternating left/right (bilateral).
+    var strokeIdx = Math.floor(cyc * 2);
+    var inStroke = frac(cyc * 2);
+    var b = 0;
+    if (((strokeIdx % CFG.breathEvery) + CFG.breathEvery) % CFG.breathEvery === 0) {
+      var w = smoothstep(0.26, 0.46, inStroke) * (1 - smoothstep(0.66, 0.92, inStroke));
+      b = ((strokeIdx % 2 === 0) ? 1 : -1) * w;   // +1 = to the swimmer's left
+    }
+    pose.breath = b;
+
+    // spine
+    J.hipC[0] = 0; J.hipC[1] = 0; J.hipC[2] = 0;
+    J.shoulderC[0] = SEG.torso; J.shoulderC[1] = 0; J.shoulderC[2] = 0.018;
+    J.shR[0] = J.shoulderC[0] - 0.02; J.shR[1] = -SEG.shoulderHW; J.shR[2] = J.shoulderC[2];
+    J.shL[0] = J.shoulderC[0] - 0.02; J.shL[1] =  SEG.shoulderHW; J.shL[2] = J.shoulderC[2];
+    J.hipR[0] = 0.02; J.hipR[1] = -SEG.hipHW; J.hipR[2] = 0;
+    J.hipL[0] = 0.02; J.hipL[1] =  SEG.hipHW; J.hipL[2] = 0;
+
+    // Head stays low and in line with the spine; the breath rotates the
+    // face to the side rather than lifting or swinging the whole skull.
+    var by = CFG.breathAngle * b;
+    var pitchDown = -0.20;                              // face-down attitude
+    var cy = Math.cos(by), sy = Math.sin(by);
+    var cp = Math.cos(pitchDown), sp = Math.sin(pitchDown);
+    headAxis[0] = cp * cy; headAxis[1] = cp * sy; headAxis[2] = sp;
+    headSide[0] = -sy;     headSide[1] = cy;     headSide[2] = 0;
+    headUp[0] = -sp * cy;  headUp[1] = -sp * sy; headUp[2] = cp;
+
+    var spx = cp, spz = sp;                             // spine axis, unyawed
+    J.neckA[0] = J.shoulderC[0] + 0.03; J.neckA[1] = 0; J.neckA[2] = J.shoulderC[2] + 0.026;
+    J.neckB[0] = J.neckA[0] + spx * SEG.neck;
+    J.neckB[1] = J.neckA[1] + sy * 0.018;
+    J.neckB[2] = J.neckA[2] + spz * SEG.neck;
+    J.headC[0] = J.neckB[0] + spx * 0.085;
+    J.headC[1] = J.neckB[1] + sy * 0.030;
+    J.headC[2] = J.neckB[2] + spz * 0.085 + 0.012;
+
+    poseArm(-1, phR, J.shR, J.elbR, J.wrR, J.tipR);
+    poseArm( 1, phL, J.shL, J.elbL, J.wrL, J.tipL);
+
+    var legF = TAU * (CFG.kickBeats / 2) * cyc;         // 3 beats per leg per cycle
+    poseLeg(J.hipR, legF,            J.kneeR, J.ankR, J.toeR);
+    poseLeg(J.hipL, legF + Math.PI,  J.kneeL, J.ankL, J.toeL);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     PART FRAMES — build an orthonormal frame per segment, then fold
+     the body matrix in so the inner loop is a plain 3-axis blend.
+     ───────────────────────────────────────────────────────────── */
+  var FR = [];
+  for (var fi = 0; fi < NPARTS; fi++) {
+    FR.push({ ox: 0, oy: 0, oz: 0, dx: 0, dy: 0, dz: 0,
+              ex: 0, ey: 0, ez: 0, gx: 0, gy: 0, gz: 0 });
+  }
+
+  function setSegment(i, A, B, upx, upy, upz) {
+    var f = FR[i];
+    var dx = B[0] - A[0], dy = B[1] - A[1], dz = B[2] - A[2];
+    var dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-5;
+    dx /= dl; dy /= dl; dz /= dl;
+    // e1 = up × dir, orthonormalised; e2 = dir × e1
+    var ex = upy * dz - upz * dy, ey = upz * dx - upx * dz, ez = upx * dy - upy * dx;
+    var el = Math.sqrt(ex * ex + ey * ey + ez * ez);
+    if (el < 1e-4) { ex = 0; ey = 1; ez = 0; el = 1; }
+    ex /= el; ey /= el; ez /= el;
+    f.ox = A[0]; f.oy = A[1]; f.oz = A[2];
+    f.dx = dx; f.dy = dy; f.dz = dz;
+    f.ex = ex; f.ey = ey; f.ez = ez;
+    f.gx = dy * ez - dz * ey; f.gy = dz * ex - dx * ez; f.gz = dx * ey - dy * ex;
+    // rescale so the stored local offsets span exactly this bone
+    var want = partLength(PARTS[i].name);
+    if (want > 0) { f.sx = dl / want; } else { f.sx = 1; }
+  }
+
+  function buildFrames() {
+    setSegment(IDX.torso, J.hipC, J.shoulderC, 0, 0, 1);
+    setSegment(IDX.neck,  J.neckA, J.neckB,    0, 0, 1);
+
+    // head is an ellipsoid: its frame is the head's own axes
+    var fh = FR[IDX.head];
+    fh.ox = J.headC[0]; fh.oy = J.headC[1]; fh.oz = J.headC[2];
+    fh.dx = headAxis[0]; fh.dy = headAxis[1]; fh.dz = headAxis[2];
+    fh.ex = headSide[0]; fh.ey = headSide[1]; fh.ez = headSide[2];
+    fh.gx = headUp[0];   fh.gy = headUp[1];   fh.gz = headUp[2];
+    fh.sx = 1;
+
+    setSegment(IDX.uarmR, J.shR, J.elbR, 0, 0, 1);
+    setSegment(IDX.uarmL, J.shL, J.elbL, 0, 0, 1);
+    setSegment(IDX.foreR, J.elbR, J.wrR, 0, 0, 1);
+    setSegment(IDX.foreL, J.elbL, J.wrL, 0, 0, 1);
+    setSegment(IDX.handR, J.wrR, J.tipR, 0, 0, 1);
+    setSegment(IDX.handL, J.wrL, J.tipL, 0, 0, 1);
+    setSegment(IDX.thighR, J.hipR, J.kneeR, 0, 1, 0);
+    setSegment(IDX.thighL, J.hipL, J.kneeL, 0, 1, 0);
+    setSegment(IDX.shankR, J.kneeR, J.ankR, 0, 1, 0);
+    setSegment(IDX.shankL, J.kneeL, J.ankL, 0, 1, 0);
+    setSegment(IDX.footR, J.ankR, J.toeR, 0, 1, 0);
+    setSegment(IDX.footL, J.ankL, J.toeL, 0, 1, 0);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     CAMERA
+     ───────────────────────────────────────────────────────────── */
+  var cam = {
+    x: 0, y: -CFG.camDist, z: 1,
+    rx: 1, ry: 0, rz: 0,       // screen-right basis
+    ux: 0, uy: 0, uz: 1,       // screen-up basis
+    fx: 0, fy: 1, fz: 0,       // forward basis
+    focal: 1200, cx: 0, cy: 0
+  };
+
+  function setupCamera(W, Hp) {
+    var e = CFG.camElev * Math.PI / 180, az = CFG.camAzim * Math.PI / 180;
+    cam.x = CFG.camDist * Math.cos(e) * Math.sin(az);
+    cam.y = -CFG.camDist * Math.cos(e) * Math.cos(az);
+    cam.z = CFG.camDist * Math.sin(e);
+    var tx = 0, ty = 0, tz = CFG.camTargetZ;
+    var fx = tx - cam.x, fy = ty - cam.y, fz = tz - cam.z;
+    var fl = Math.sqrt(fx * fx + fy * fy + fz * fz);
+    fx /= fl; fy /= fl; fz /= fl;
+    // right = forward × worldUp
+    var rx = fy * 1 - fz * 0, ry = fz * 0 - fx * 1, rz = fx * 0 - fy * 0;
+    var rl = Math.sqrt(rx * rx + ry * ry + rz * rz) || 1;
+    rx /= rl; ry /= rl; rz /= rl;
+    var ux = ry * fz - rz * fy, uy = rz * fx - rx * fz, uz = rx * fy - ry * fx;
+    cam.fx = fx; cam.fy = fy; cam.fz = fz;
+    cam.rx = rx; cam.ry = ry; cam.rz = rz;
+    cam.ux = ux; cam.uy = uy; cam.uz = uz;
+    cam.focal = (CFG.screenFrac * W / BODY_SPAN) * CFG.camDist;
+    cam.cx = W * 0.5;
+    cam.cy = Hp * 0.52;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     WAVE FIELD
+     ───────────────────────────────────────────────────────────── */
+  // Wavelengths are chosen so several crests fit across the frame — long
+  // swell alone just reads as a flat grid.
+  var WAVES = [
+    { ax: 1.00, ay: 0.14, k: 8.0,  amp: 0.0120, sp: 0.95 },
+    { ax: 0.80, ay: -0.60, k: 15.0, amp: 0.0058, sp: 1.20 },
+    { ax: 0.52, ay: 0.85, k: 27.0, amp: 0.0026, sp: 1.55 },
+    { ax: 0.96, ay: 0.28, k: 48.0, amp: 0.0011, sp: 2.10 }
+  ];
+  function waveH(x, y, t) {
+    var h = 0;
+    for (var i = 0; i < WAVES.length; i++) {
+      var w = WAVES[i];
+      h += w.amp * fsin(w.k * (w.ax * x + w.ay * y) - w.sp * w.k * t);
+    }
+    return h;
+  }
+  function waveSlopeX(x, y, t) {
+    var s = 0;
+    for (var i = 0; i < WAVES.length; i++) {
+      var w = WAVES[i];
+      s += w.amp * w.k * w.ax * fcos(w.k * (w.ax * x + w.ay * y) - w.sp * w.k * t);
+    }
+    return s;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     PARTICLES — spray at hand entry, bubbles off the kick, foam wake
+     ───────────────────────────────────────────────────────────── */
+  var P_MAX = 900;
+  var qx = new Float32Array(P_MAX), qy = new Float32Array(P_MAX), qz = new Float32Array(P_MAX);
+  var qvx = new Float32Array(P_MAX), qvy = new Float32Array(P_MAX), qvz = new Float32Array(P_MAX);
+  var qlife = new Float32Array(P_MAX), qmax = new Float32Array(P_MAX);
+  var qkind = new Uint8Array(P_MAX);     // 0 = spray, 1 = bubble, 2 = foam
+  var qn = 0;
+
+  function spawn(kind, x, y, z, vx, vy, vz, life) {
+    if (qn >= P_MAX) return;
+    var i = qn++;
+    qx[i] = x; qy[i] = y; qz[i] = z;
+    qvx[i] = vx; qvy[i] = vy; qvz[i] = vz;
+    qlife[i] = life; qmax[i] = life; qkind[i] = kind;
+  }
+  function killParticle(i) {
+    var l = --qn;
+    if (i !== l) {
+      qx[i] = qx[l]; qy[i] = qy[l]; qz[i] = qz[l];
+      qvx[i] = qvx[l]; qvy[i] = qvy[l]; qvz[i] = qvz[l];
+      qlife[i] = qlife[l]; qmax[i] = qmax[l]; qkind[i] = qkind[l];
+    }
+  }
+  function updateParticles(dt) {
+    var drift = -CFG.swimSpeed;                 // water streams past the swimmer
+    for (var i = qn - 1; i >= 0; i--) {
+      qlife[i] -= dt;
+      if (qlife[i] <= 0) { killParticle(i); continue; }
+      var k = qkind[i];
+      if (k === 0) {                            // spray — ballistic, above water
+        qvz[i] -= 9.81 * dt;
+        qx[i] += (qvx[i] + drift) * dt; qy[i] += qvy[i] * dt; qz[i] += qvz[i] * dt;
+        if (qz[i] < 0) { qkind[i] = 2; qz[i] = 0; qvx[i] *= 0.3; qvy[i] *= 0.3; qlife[i] = Math.min(qlife[i], 0.8); }
+      } else if (k === 1) {                     // bubble — rises, pops at the surface
+        qvz[i] += (0.55 - qvz[i]) * dt * 3;
+        qx[i] += (qvx[i] + drift) * dt; qy[i] += qvy[i] * dt; qz[i] += qvz[i] * dt;
+        qvx[i] *= (1 - dt * 1.6); qvy[i] *= (1 - dt * 1.6);
+        if (qz[i] > -0.005) { qkind[i] = 2; qz[i] = 0; qlife[i] = Math.min(qlife[i], 0.55); }
+      } else {                                  // foam — sits on the surface, spreads
+        qx[i] += (qvx[i] + drift) * dt; qy[i] += qvy[i] * dt;
+        qz[i] = 0;
+        qvx[i] *= (1 - dt * 1.1); qvy[i] *= (1 - dt * 1.1);
+      }
+    }
+  }
+
+  var lastPhR = 0, lastPhL = 0, lastFootRz = 0, lastFootLz = 0, foamAcc = 0;
+
+  function emitParticles(dt) {
+    var burst = reduced ? 0.45 : 1;
+    // hand entry — a tight burst of spray and a swirl of bubbles
+    if (pose.phR < lastPhR) handEntry(J.tipR, burst);
+    if (pose.phL < lastPhL) handEntry(J.tipL, burst);
+    lastPhR = pose.phR; lastPhL = pose.phL;
+
+    // kick breaking the surface
+    var fr = worldOf(J.toeR, _w1), frz = fr[2];
+    if (lastFootRz < 0 && frz >= 0) kickSplash(fr, burst);
+    lastFootRz = frz;
+    var fl2 = worldOf(J.toeL, _w2), flz = fl2[2];
+    if (lastFootLz < 0 && flz >= 0) kickSplash(fl2, burst);
+    lastFootLz = flz;
+
+    // steady wake foam trailing the body
+    foamAcc += dt * (reduced ? 22 : 46);
+    while (foamAcc >= 1) {
+      foamAcc -= 1;
+      var hipW = worldOf(J.hipC, _w1);
+      spawn(2, hipW[0] - 0.15 - Math.random() * 0.5,
+               hipW[1] + (Math.random() - 0.5) * 0.42,
+               0,
+               (Math.random() - 0.5) * 0.25, (Math.random() - 0.5) * 0.28, 0,
+               1.1 + Math.random() * 1.5);
+    }
+  }
+  function handEntry(tip, burst) {
+    var w = worldOf(tip, _w1);
+    var n = Math.round(16 * burst);
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * TAU, s = 0.5 + Math.random() * 1.5;
+      spawn(0, w[0], w[1], Math.max(0.01, w[2]),
+            Math.cos(a) * s * 0.5 + 0.5, Math.sin(a) * s * 0.4, 0.5 + Math.random() * 1.5,
+            0.28 + Math.random() * 0.4);
+    }
+    n = Math.round(14 * burst);
+    for (i = 0; i < n; i++) {
+      spawn(1, w[0] + (Math.random() - 0.5) * 0.12,
+               w[1] + (Math.random() - 0.5) * 0.12,
+               w[2] - Math.random() * 0.22,
+               (Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.3, 0.1,
+               0.6 + Math.random() * 0.9);
+    }
+  }
+  function kickSplash(w, burst) {
+    var n = Math.round(9 * burst);
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * TAU;
+      spawn(0, w[0], w[1], 0.02,
+            Math.cos(a) * 0.5 - 0.3, Math.sin(a) * 0.4, 0.4 + Math.random() * 1.1,
+            0.22 + Math.random() * 0.3);
+    }
+    for (i = 0; i < Math.round(7 * burst); i++) {
+      spawn(1, w[0] + (Math.random() - 0.5) * 0.16, w[1] + (Math.random() - 0.5) * 0.16,
+               -0.05 - Math.random() * 0.18, 0, 0, 0.1, 0.5 + Math.random() * 0.7);
+    }
+  }
+
+  // body-local → world (uses the current body matrix)
+  var _w1 = new Float32Array(3), _w2 = new Float32Array(3);
+  var BM = new Float32Array(9), BPx = 0, BPy = 0, BPz = 0;
+  function worldOf(p, out) {
+    out[0] = BM[0] * p[0] + BM[1] * p[1] + BM[2] * p[2] + BPx;
+    out[1] = BM[3] * p[0] + BM[4] * p[1] + BM[5] * p[2] + BPy;
+    out[2] = BM[6] * p[0] + BM[7] * p[1] + BM[8] * p[2] + BPz;
+    return out;
+  }
+  function buildBodyMatrix(t) {
+    var cr = Math.cos(pose.roll), sr = Math.sin(pose.roll);
+    var cp = Math.cos(pose.pitch), sp = Math.sin(pose.pitch);
+    var cy = Math.cos(pose.yaw), sy = Math.sin(pose.yaw);
+    // M = Rx(roll) · Ry(pitch) · Rz(yaw)
+    var m00 = cp * cy, m01 = -cp * sy, m02 = sp;
+    var m10 = sr * sp * cy + cr * sy, m11 = -sr * sp * sy + cr * cy, m12 = -sr * cp;
+    var m20 = -cr * sp * cy + sr * sy, m21 = cr * sp * sy + sr * cy, m22 = cr * cp;
+    BM[0] = m00; BM[1] = m01; BM[2] = m02;
+    BM[3] = m10; BM[4] = m11; BM[5] = m12;
+    BM[6] = m20; BM[7] = m21; BM[8] = m22;
+    // gentle lateral drift so the swimmer never reads as pinned in place
+    BPx = 0.34 * fsin(t * 0.28) - SEG.torso * 0.35;
+    BPy = 0.06 * fsin(t * 0.19);
+    BPz = CFG.bodyDepth + pose.bob;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     LATTICE / RENDER STATE
+     ───────────────────────────────────────────────────────────── */
+  var W = 0, Hh = 0, dpr = 1;
+  var S = 6, cols = 0, rows = 0, cellN = 0, acc = null, cellHash = null;
+  var S2 = 12, cols2 = 0, rows2 = 0, cellN2 = 0, cellHash2 = null;
+  var dotPx = 1;
+  var buckets = [], bucketN = new Int32Array(LEVELS);
+  var buckets2 = [], bucketN2 = new Int32Array(LEVELS);
+  var figFill = [], seaFill = [];
+
+  function buildFills() {
+    figFill.length = 0; seaFill.length = 0;
+    var f = CFG.colFigure, s = CFG.colSea;
+    for (var i = 0; i < LEVELS; i++) {
+      var a = Math.pow((i + 1) / LEVELS, 0.82);
+      figFill.push("rgba(" + f[0] + "," + f[1] + "," + f[2] + "," + a.toFixed(3) + ")");
+      seaFill.push("rgba(" + s[0] + "," + s[1] + "," + s[2] + "," + (a * 0.88).toFixed(3) + ")");
+    }
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; Hh = window.innerHeight;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(Hh * dpr);
+    canvas.style.width = W + "px";
+    canvas.style.height = Hh + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Lattice pitch, snapped so every dot lands on whole device pixels.
+    // Small viewports get a finer pitch, or the figure loses its shape.
+    var wf = clamp(W / 1440, 0.3, 1);
+    var spacing = CFG.dotSpacing * (0.55 + 0.45 * wf);
+    while ((W / spacing) * (Hh / spacing) > CFG.maxCells) spacing += 0.5;
+    S = Math.max(1, Math.round(spacing * dpr)) / dpr;
+    cols = Math.ceil(W / S) + 1; rows = Math.ceil(Hh / S) + 1;
+    cellN = cols * rows;
+    acc = new Float32Array(cellN);
+    cellHash = new Float32Array(cellN);
+    for (var i = 0; i < cellN; i++) cellHash[i] = hash1(i * 7919 + 13);
+
+    S2 = S * CFG.seaSpacingMul;
+    cols2 = Math.ceil(W / S2) + 1; rows2 = Math.ceil(Hh / S2) + 1;
+    cellN2 = cols2 * rows2;
+    cellHash2 = new Float32Array(cellN2);
+    for (i = 0; i < cellN2; i++) cellHash2[i] = hash1(i * 6271 + 71);
+
+    dotPx = Math.max(1, Math.round(CFG.dotSize * dpr)) / dpr;
+
+    buckets.length = 0; buckets2.length = 0;
+    for (i = 0; i < LEVELS; i++) {
+      buckets.push(new Int32Array(cellN));
+      buckets2.push(new Int32Array(cellN2));
+    }
+
+    // point budget scales with screen area, so phones stay smooth
+    var area = W * Hh;
+    var budget = Math.round(clamp(CFG.dotCount * Math.pow(area / (1440 * 800), 0.6),
+                                  5200, CFG.dotCount));
+    buildCloud(budget);
+    setupCamera(W, Hh);
+    buildFills();
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     FIGURE PASS — project the cloud, weight it, splat into the lattice
+     ───────────────────────────────────────────────────────────── */
+  var LIGHT = (function () {                 // soft key light, high and behind
+    var l = [0.18, -0.42, 0.89];
+    var n = Math.sqrt(l[0] * l[0] + l[1] * l[1] + l[2] * l[2]);
+    return [l[0] / n, l[1] / n, l[2] / n];
+  })();
+
+  function drawFigure(t) {
+    acc.fill(0);
+    var shimmer = reduced ? 0.4 : 1;
+    var camx = cam.x, camy = cam.y, camz = cam.z;
+    var rx = cam.rx, ry = cam.ry, rz = cam.rz;
+    var ux = cam.ux, uy = cam.uy, uz = cam.uz;
+    var fx = cam.fx, fy = cam.fy, fz = cam.fz;
+    var focal = cam.focal, ccx = cam.cx, ccy = cam.cy;
+    var invS = 1 / S;
+
+    for (var p = 0; p < NPARTS; p++) {
+      var f = FR[p];
+      // fold the body matrix into this part's frame once
+      var Ox = BM[0] * f.ox + BM[1] * f.oy + BM[2] * f.oz + BPx;
+      var Oy = BM[3] * f.ox + BM[4] * f.oy + BM[5] * f.oz + BPy;
+      var Oz = BM[6] * f.ox + BM[7] * f.oy + BM[8] * f.oz + BPz;
+      var sc = f.sx;
+      var Dx = (BM[0] * f.dx + BM[1] * f.dy + BM[2] * f.dz) * sc;
+      var Dy = (BM[3] * f.dx + BM[4] * f.dy + BM[5] * f.dz) * sc;
+      var Dz = (BM[6] * f.dx + BM[7] * f.dy + BM[8] * f.dz) * sc;
+      var Ex = BM[0] * f.ex + BM[1] * f.ey + BM[2] * f.ez;
+      var Ey = BM[3] * f.ex + BM[4] * f.ey + BM[5] * f.ez;
+      var Ez = BM[6] * f.ex + BM[7] * f.ey + BM[8] * f.ez;
+      var Gx = BM[0] * f.gx + BM[1] * f.gy + BM[2] * f.gz;
+      var Gy = BM[3] * f.gx + BM[4] * f.gy + BM[5] * f.gz;
+      var Gz = BM[6] * f.gx + BM[7] * f.gy + BM[8] * f.gz;
+
+      var s0 = partStart[p], s1 = s0 + partCount[p];
+      for (var i = s0; i < s1; i++) {
+        var a = PA[i], b = PB[i], c = PC[i], edge = PEDGE[i];
+
+        if (edge > 0 && shimmer > 0) {                  // edge dots drift in the water
+          var ph = PPH[i];
+          var j1 = fsin(t * 2.3 + ph) * 0.012 * edge * shimmer;
+          var j2 = fcos(t * 1.9 + ph * 1.7) * 0.012 * edge * shimmer;
+          b += j1; c += j2;
+        }
+
+        var wx = Ox + Dx * a + Ex * b + Gx * c;
+        var wy = Oy + Dy * a + Ey * b + Gy * c;
+        var wz = Oz + Dz * a + Ez * b + Gz * c;
+
+        var dx = wx - camx, dy = wy - camy, dz = wz - camz;
+        var cz = dx * fx + dy * fy + dz * fz;
+        if (cz < 0.4) continue;
+        var inv = focal / cz;
+        var sx = ccx + (dx * rx + dy * ry + dz * rz) * inv;
+        var sy = ccy - (dx * ux + dy * uy + dz * uz) * inv;
+        if (sx < -8 || sy < -8 || sx > W + 8 || sy > Hh + 8) continue;
+
+        // Shade from the surface normal, but only where the point is near
+        // the surface — interior points stay neutral so the modelling reads
+        // as coherent lighting rather than noise.
+        var nx = Ex * b + Gx * c, ny = Ey * b + Gy * c, nz = Ez * b + Gz * c;
+        var nl = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1e-5;
+        var lam = (nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]) / nl;
+        var wgt = 0.82 + edge * (0.55 * lam - 0.10);
+
+        // Water reads the way it does in real over-water footage: what you
+        // see is the back, the recovering arm and the head. Everything deep
+        // is a faint diffused ghost, not a solid limb.
+        if (wz < 0) {
+          var att = Math.exp(wz * 6.2);
+          wgt *= (att > 0.035 ? att : 0.035);
+        } else {
+          wgt *= 1.4;                                   // above the surface: crisp
+        }
+        if (wz > -0.06 && wz < 0.06) wgt *= 1.5;        // waterline glint on the body
+
+        // near side of the roll brighter than the far side — separates the
+        // two arms and keeps the figure from flattening
+        wgt *= Math.exp((CFG.camDist - cz) * 0.5);
+
+        // bilinear splat into the halftone lattice
+        var gx = sx * invS, gy = sy * invS;
+        var ix = gx | 0, iy = gy | 0;
+        if (ix < 0 || iy < 0 || ix >= cols - 1 || iy >= rows - 1) continue;
+        var tx = gx - ix, ty = gy - iy;
+        var base = iy * cols + ix;
+        acc[base] += wgt * (1 - tx) * (1 - ty);
+        acc[base + 1] += wgt * tx * (1 - ty);
+        acc[base + cols] += wgt * (1 - tx) * ty;
+        acc[base + cols + 1] += wgt * tx * ty;
+      }
+    }
+
+    // particles land in the same lattice so foam and body read as one field
+    for (var q = 0; q < qn; q++) {
+      var pdx = qx[q] - camx, pdy = qy[q] - camy, pdz = qz[q] - camz;
+      var pcz = pdx * fx + pdy * fy + pdz * fz;
+      if (pcz < 0.4) continue;
+      var pinv = focal / pcz;
+      var psx = ccx + (pdx * rx + pdy * ry + pdz * rz) * pinv;
+      var psy = ccy - (pdx * ux + pdy * uy + pdz * uz) * pinv;
+      if (psx < 0 || psy < 0 || psx > W || psy > Hh) continue;
+      var lf = qlife[q] / qmax[q];
+      var pw = (qkind[q] === 0 ? 1.5 : qkind[q] === 1 ? 0.9 : 0.7) * lf * lf;
+      var pgx = psx * invS, pgy = psy * invS;
+      var pix = pgx | 0, piy = pgy | 0;
+      if (pix < 0 || piy < 0 || pix >= cols - 1 || piy >= rows - 1) continue;
+      var ptx = pgx - pix, pty = pgy - piy;
+      var pb = piy * cols + pix;
+      acc[pb] += pw * (1 - ptx) * (1 - pty);
+      acc[pb + 1] += pw * ptx * (1 - pty);
+      acc[pb + cols] += pw * (1 - ptx) * pty;
+      acc[pb + cols + 1] += pw * ptx * pty;
+    }
+
+    // lattice → dots, dithered so edges break into loose scattered points
+    for (var l = 0; l < LEVELS; l++) bucketN[l] = 0;
+    var gain = CFG.figureGain, dith = CFG.ditherFig;
+    for (var ci = 0; ci < cellN; ci++) {
+      var v = acc[ci];
+      if (v <= 0.004) continue;
+      var bri = 1 - Math.exp(-gain * v);
+      if (bri < cellHash[ci] * dith) continue;
+      var lev = (bri * LEVELS) | 0;
+      if (lev > LEVELS - 1) lev = LEVELS - 1;
+      buckets[lev][bucketN[lev]++] = ci;
+    }
+    for (l = 0; l < LEVELS; l++) {
+      var n = bucketN[l];
+      if (!n) continue;
+      ctx.fillStyle = figFill[l];
+      var arr = buckets[l];
+      for (var k = 0; k < n; k++) {
+        var idx = arr[k];
+        ctx.fillRect((idx % cols) * S, ((idx / cols) | 0) * S, dotPx, dotPx);
+      }
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     SEA PASS — screen-space raymarch onto the wave surface, so the
+     dot field is uniform on the lattice and compresses with distance
+     ───────────────────────────────────────────────────────────── */
+  function drawSea(t) {
+    for (var l = 0; l < LEVELS; l++) bucketN2[l] = 0;
+    var camx = cam.x, camy = cam.y, camz = cam.z;
+    var rx = cam.rx, ry = cam.ry, rz = cam.rz;
+    var ux = cam.ux, uy = cam.uy, uz = cam.uz;
+    var fx = cam.fx, fy = cam.fy, fz = cam.fz;
+    var focal = cam.focal, ccx = cam.cx, ccy = cam.cy;
+    var scroll = CFG.swimSpeed * t;             // treadmill: the water streams past
+    var swimX = BPx;
+    var hw = worldOf(J.headC, _w2), bowX = hw[0], bowY = hw[1];
+
+    for (var iy = 0; iy < rows2; iy++) {
+      var py = iy * S2;
+      for (var ix = 0; ix < cols2; ix++) {
+        var px = ix * S2;
+        // ray through this lattice cell
+        var a = px - ccx, bq = -(py - ccy);
+        var dx = rx * a + ux * bq + fx * focal;
+        var dy = ry * a + uy * bq + fy * focal;
+        var dz = rz * a + uz * bq + fz * focal;
+        if (dz > -1e-4) continue;               // above the horizon — sky stays black
+
+        var tt = -camz / dz;
+        var wx = camx + dx * tt, wy = camy + dy * tt;
+        // one correction step onto the displaced surface
+        var hgt = waveH(wx + scroll, wy, t);
+        tt = (hgt - camz) / dz;
+        if (tt <= 0) continue;
+        wx = camx + dx * tt; wy = camy + dy * tt;
+
+        var dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        var dist = tt * dl;
+        if (dist > 34) continue;
+
+        // crest glint: brightest where the surface tilts toward the light
+        var sl = waveSlopeX(wx + scroll, wy, t);
+        var glint = clamp(0.5 + sl * 2.6, 0, 1);
+        glint = glint * glint;
+
+        var near = 1 - smoothstep(7, 32, dist);            // fade into the dark distance
+        var fg = 1 - smoothstep(1.2, 3.0, dist) * 0.35;    // calm the stretched foreground
+        var bri = (0.22 + 0.78 * glint) * near * fg;
+
+        // wake: the water behind the swimmer stays churned up. This is what
+        // sells forward travel while the swimmer holds position.
+        var rel = wx - swimX;
+        if (rel < 0.5) {
+          var lat = Math.abs(wy) / (0.40 + 0.17 * (0.5 - rel));
+          var wake = Math.exp(rel * 0.20) * Math.exp(-lat * lat * 1.6);
+          if (wake > 0.004) {
+            var churn = fsin(wx * 21 + t * 5.5) * fsin(wy * 17 - t * 4.1);
+            bri += wake * (0.52 + 0.46 * churn) * near;
+          }
+        }
+        // bow wave pushed off the head and shoulders
+        var hdx = wx - bowX, hdy = wy - bowY;
+        var hr2 = hdx * hdx + hdy * hdy;
+        if (hr2 < 1.0) {
+          var bw = 1 - Math.sqrt(hr2);
+          bri += bw * bw * 0.55 * (0.65 + 0.35 * fsin(wx * 26 - t * 7.0));
+        }
+        if (bri <= 0.012) continue;
+
+        var ci = iy * cols2 + ix;
+        if (bri < cellHash2[ci] * CFG.ditherSea) continue;
+        var lev = (bri * LEVELS) | 0;
+        if (lev > LEVELS - 1) lev = LEVELS - 1;
+        if (lev < 0) lev = 0;
+        buckets2[lev][bucketN2[lev]++] = ci;
+      }
+    }
+
+    for (l = 0; l < LEVELS; l++) {
+      var n = bucketN2[l];
+      if (!n) continue;
+      ctx.fillStyle = seaFill[l];
+      var arr = buckets2[l];
+      for (var k = 0; k < n; k++) {
+        var idx = arr[k];
+        ctx.fillRect((idx % cols2) * S2, ((idx / cols2) | 0) * S2, dotPx, dotPx);
+      }
+    }
+  }
+
+
+  /* ─────────────────────────────────────────────────────────────
+     MAIN LOOP — delta-timed, so speed is identical on any display
+     ───────────────────────────────────────────────────────────── */
+  var simT = 0, prev = 0, timeScale = reduced ? 0.35 : 1;
+
+  function frame(now) {
+    var dt = prev ? (now - prev) / 1000 : 0.016;
+    prev = now;
+    if (dt > 0.1) dt = 0.1;                     // survive tab switches
+    dt *= timeScale;
+    simT += dt;
+
+    updatePose(simT);
+    buildBodyMatrix(simT);
+    buildFrames();
+    emitParticles(dt);
+    updateParticles(dt);
+
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fillRect(0, 0, W, Hh);
+    ctx.globalCompositeOperation = "lighter";
+    drawSea(simT);
+    drawFigure(simT);
+    ctx.globalCompositeOperation = "source-over";
+
+    requestAnimationFrame(frame);
+  }
+
+  var resizeT = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(resize, 120);
+  });
+
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
