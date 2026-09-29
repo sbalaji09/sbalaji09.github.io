@@ -27,6 +27,9 @@
     --line: #e5e5e5;
     --w: 700px;
     --side: clamp(24px, 6vw, 64px);
+    /* space the text column leaves free on the right for the pinned nav,
+       so the two can never share the same horizontal band */
+    --nav-gutter: 130px;
 }
 
 html, body {
@@ -56,7 +59,7 @@ a:hover { text-decoration-color: var(--ink); }
 a:visited { color: var(--ink); }
 
 .page {
-    width: min(calc(100% - 96px), var(--w));
+    width: min(calc(100% - var(--side) - var(--nav-gutter)), var(--w));
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -95,22 +98,13 @@ a:visited { color: var(--ink); }
     content: "- ";
 }
 
-/* ── ascii swimmer ── */
-.ascii-swim {
-    margin-top: 8px;
-    padding: 16px 0;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-}
-.ascii-swim canvas {
-    display: block;
-    width: 100%;
-}
-
 /* ── tab nav (shared across pages, pinned to the right wall) ── */
+/* top is set so the first link sits on the same baseline as the page
+   heading: 72px of .page padding + 17px to match the heading's larger
+   half-leading and ascent. */
 nav.tabs {
     position: fixed;
-    top: 40px;
+    top: 89px;
     right: var(--side);
     display: flex;
     flex-direction: column;
@@ -118,7 +112,6 @@ nav.tabs {
     gap: 8px;
     font-size: 0.95rem;
 }
-nav.tabs.align-with-bio { top: 113px; }
 nav.tabs a { text-decoration: none; }
 nav.tabs a:hover { text-decoration: underline; text-decoration-color: var(--ink); }
 nav.tabs a.is-current { font-weight: 700; }
@@ -191,5 +184,4 @@ footer .contact-links {
         position: static;
         margin-bottom: 40px;
     }
-    nav.tabs.align-with-bio { top: auto; }
 }
